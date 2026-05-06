@@ -282,7 +282,11 @@ const OutgoingMessagePrototype = {
   getHeaders() {
     const headers = this[headersSymbol];
     if (!headers) return kEmptyObject;
-    const json = headers.toJSON();
+    // Node's http docs specify that getHeaders() returns a null-prototype
+    // object; copy the FetchHeaders.toJSON() result onto a null-proto target
+    // so assert.deepStrictEqual against a `{ __proto__: null, ... }` fixture
+    // succeeds (see upstream test-http-set-header-chain.js).
+    const json = Object.assign(Object.create(null), headers.toJSON());
     if (this[kEmptySetCookie] && json["set-cookie"] === undefined) {
       json["set-cookie"] = [];
     }
