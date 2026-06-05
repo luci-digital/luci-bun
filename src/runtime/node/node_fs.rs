@@ -6478,7 +6478,10 @@ impl NodeFS {
                 dirent_path = if args.path_is_buffer {
                     BunString::clone_latin1(basename_bytes)
                 } else {
-                    webcore::encoding::to_bun_string(basename_bytes, encoding_to_node(args.encoding))
+                    webcore::encoding::to_bun_string(
+                        basename_bytes,
+                        encoding_to_node(args.encoding),
+                    )
                 };
             }
 
@@ -6493,7 +6496,14 @@ impl NodeFS {
             } else {
                 current.kind
             };
-            T::append_entry(entries, utf8_name, &dirent_path, kind, args.encoding, args.path_is_buffer);
+            T::append_entry(
+                entries,
+                utf8_name,
+                &dirent_path,
+                kind,
+                args.encoding,
+                args.path_is_buffer,
+            );
         }
 
         dirent_path.deref();
@@ -6542,7 +6552,10 @@ impl NodeFS {
                 dirent_path = if args.path_is_buffer {
                     BunString::clone_latin1(basename_bytes)
                 } else {
-                    webcore::encoding::to_bun_string(basename_bytes, encoding_to_node(args.encoding))
+                    webcore::encoding::to_bun_string(
+                        basename_bytes,
+                        encoding_to_node(args.encoding),
+                    )
                 };
             }
 
