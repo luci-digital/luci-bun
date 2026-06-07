@@ -128,7 +128,6 @@ const errors: ErrorCodeMapping = [
   ["ERR_HTTP2_UNSUPPORTED_PROTOCOL", Error],
   ["ERR_HTTP2_INVALID_SETTING_VALUE", TypeError, "TypeError", RangeError],
   ["ERR_ILLEGAL_CONSTRUCTOR", TypeError],
-  ["ERR_IMPORT_ATTRIBUTE_UNSUPPORTED", TypeError],
   ["ERR_INCOMPATIBLE_OPTION_PAIR", TypeError],
   ["ERR_INVALID_ADDRESS", Error],
   ["ERR_INVALID_ADDRESS_FAMILY", RangeError],
@@ -330,5 +329,6 @@ const errors: ErrorCodeMapping = [
   // Appended (not alphabetical): discriminants are index-aligned with the
   // checked-in Rust mirror (src/jsc/ErrorCode.rs) — only ever append here.
   ["ERR_HTTP2_GOAWAY_SESSION", Error],
+  ["ERR_IMPORT_ATTRIBUTE_UNSUPPORTED", TypeError],
 ];
 export default errors;

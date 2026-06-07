@@ -687,12 +687,13 @@ impl ErrorCode {
     pub const POSTGRES_CONNECTION_REFUSED: ErrorCode = ErrorCode(314);
     /// `ERR_MYSQL_CONNECTION_REFUSED` (instanceof Error)
     pub const MYSQL_CONNECTION_REFUSED: ErrorCode = ErrorCode(315);
-
     /// `ERR_HTTP2_GOAWAY_SESSION`
     pub const HTTP2_GOAWAY_SESSION: ErrorCode = ErrorCode(316);
+    /// `ERR_IMPORT_ATTRIBUTE_UNSUPPORTED` (instanceof TypeError)
+    pub const IMPORT_ATTRIBUTE_UNSUPPORTED: ErrorCode = ErrorCode(317);
 
     /// == C++ `NODE_ERROR_COUNT`.
-    pub const COUNT: u16 = 317;
+    pub const COUNT: u16 = 318;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -830,6 +831,7 @@ impl ErrorCode {
     pub const ERR_HTTP2_UNSUPPORTED_PROTOCOL: ErrorCode = ErrorCode::HTTP2_UNSUPPORTED_PROTOCOL;
     pub const ERR_HTTP2_INVALID_SETTING_VALUE: ErrorCode = ErrorCode::HTTP2_INVALID_SETTING_VALUE;
     pub const ERR_ILLEGAL_CONSTRUCTOR: ErrorCode = ErrorCode::ILLEGAL_CONSTRUCTOR;
+    pub const ERR_IMPORT_ATTRIBUTE_UNSUPPORTED: ErrorCode = ErrorCode::IMPORT_ATTRIBUTE_UNSUPPORTED;
     pub const ERR_INCOMPATIBLE_OPTION_PAIR: ErrorCode = ErrorCode::INCOMPATIBLE_OPTION_PAIR;
     pub const ERR_INVALID_ADDRESS: ErrorCode = ErrorCode::INVALID_ADDRESS;
     pub const ERR_INVALID_ADDRESS_FAMILY: ErrorCode = ErrorCode::INVALID_ADDRESS_FAMILY;
@@ -1386,6 +1388,7 @@ static CODE_STR: [&str; ErrorCode::COUNT as usize] = [
     "ERR_POSTGRES_CONNECTION_REFUSED",
     "ERR_MYSQL_CONNECTION_REFUSED",
     "ERR_HTTP2_GOAWAY_SESSION",
+    "ERR_IMPORT_ATTRIBUTE_UNSUPPORTED",
 ];
 
 // ──────────────────────────────────────────────────────────────────────────
