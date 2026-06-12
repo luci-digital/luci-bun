@@ -329,5 +329,7 @@ const errors: ErrorCodeMapping = [
   // Appended (not alphabetical): discriminants are index-aligned with the
   // checked-in Rust mirror (src/jsc/ErrorCode.rs) — only ever append here.
   ["ERR_HTTP2_GOAWAY_SESSION", Error],
+  ["ERR_INVALID_TYPESCRIPT_SYNTAX", SyntaxError],
+  ["ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX", SyntaxError],
 ];
 export default errors;
