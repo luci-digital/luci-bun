@@ -66,6 +66,7 @@ describe.concurrent("fetch() when the HTTP client thread cannot be spawned", () 
     // io::Error Display includes "(os error N)" on Windows and POSIX; this
     // is the diagnosability half of the fix.
     expect(parsed.message).toMatch(/os error \d+/);
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });
 
@@ -94,6 +95,7 @@ describe.concurrent("fetch() when the HTTP client thread cannot be spawned", () 
       expect.stringContaining("Failed to start HTTP Client thread"),
       expect.stringContaining("Failed to start HTTP Client thread"),
     ]);
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });
 
@@ -119,6 +121,7 @@ describe.concurrent("fetch() when the HTTP client thread cannot be spawned", () 
     expect(parsed).toEqual({
       msg: expect.stringContaining("Failed to start HTTP Client thread"),
     });
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });
 
@@ -149,6 +152,7 @@ describe.concurrent("fetch() when the HTTP client thread cannot be spawned", () 
     expect(parsed).toEqual({
       message: expect.stringContaining("Failed to start HTTP Client thread"),
     });
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });
 });

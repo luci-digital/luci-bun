@@ -1916,6 +1916,10 @@ fn fetch_impl<const ALLOW_GET_BODY: bool>(
     // or sandbox/AV denial is the common case in crash reports), reject this
     // fetch with a TypeError instead of aborting the whole process.
     if let Err(msg) = http::http_thread::init(&http::http_thread::InitOpts::default()) {
+        // `HTTPRequestBody` has no Drop impl; by this point `body` may own a
+        // Sendfile fd, a ReadableStream Strong handle, or an AnyBlob store ref.
+        // Match every other post-body error path in this function.
+        body.detach();
         let err = global_this.create_type_error_instance(format_args!("fetch() failed: {}", msg));
         return Ok(
             JSPromise::dangerously_create_rejected_promise_value_without_notifying_vm(
