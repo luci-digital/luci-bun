@@ -3270,7 +3270,10 @@ impl RunCommand {
             return;
         }
 
-        bun_http::http_thread::init_or_crash(&Default::default());
+        if bun_http::http_thread::init(&Default::default()).is_err() {
+            // Best-effort prefetch; markdown renders with alt-text fallback.
+            return;
+        }
 
         // Heap-allocate each Download so AsyncHTTP.task has a stable
         // address (see RemoteImageDownload doc comment).
