@@ -1244,12 +1244,16 @@ mod _event_loop_draft {
         crate::HTTP_THREAD_INIT.store(true, core::sync::atomic::Ordering::Release);
         bun_libdeflate_sys::libdeflate::load();
         let opts_copy = opts.clone();
-        let thread = if bun_core::env_var::feature_flag::BUN_INTERNAL_FAIL_HTTP_THREAD_SPAWN.get()
-            == Some(true)
+        let thread = if cfg!(debug_assertions)
+            && bun_core::env_var::feature_flag::BUN_INTERNAL_FAIL_HTTP_THREAD_SPAWN.get()
+                == Some(true)
         {
-            // Test-only: simulate CreateThread/pthread_create failure so the
-            // fetch()/S3 rejection path can be exercised without exhausting
-            // real OS thread limits (which is not reliably reproducible in CI).
+            // Debug-build test hook: simulate CreateThread/pthread_create
+            // failure so the fetch()/S3 rejection path can be exercised
+            // without exhausting real OS thread limits (which is not reliably
+            // reproducible in CI). Gated on `cfg!(debug_assertions)` so
+            // release binaries compile it out entirely and never read the env
+            // var; tests that set it are `skipIf(!isDebug)`.
             Err(std::io::Error::from_raw_os_error(
                 #[cfg(windows)]
                 8, // ERROR_NOT_ENOUGH_MEMORY

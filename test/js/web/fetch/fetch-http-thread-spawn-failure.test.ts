@@ -5,13 +5,15 @@
 //
 // Sentry: BUN-2V2S "Failed to start HTTP Client thread: Unexpected"
 import { describe, expect, test } from "bun:test";
-import { bunEnv, bunExe } from "harness";
+import { bunEnv, bunExe, isDebug } from "harness";
 
 // There is no portable way to force CreateThread/pthread_create to fail
 // deterministically in CI, so exercise the same error path via the
 // BUN_INTERNAL_FAIL_HTTP_THREAD_SPAWN hook (shares the code path with a real
 // spawn failure: init() latches the io::Error and every HTTP entry point
-// observes it).
+// observes it). The hook is compiled out of release builds
+// (cfg!(debug_assertions) gate in HTTPThread.rs), so these tests only run
+// against debug binaries.
 const failEnv = {
   ...bunEnv,
   BUN_INTERNAL_FAIL_HTTP_THREAD_SPAWN: "1",
@@ -28,7 +30,7 @@ async function run(src: string) {
   return { stdout, stderr, exitCode };
 }
 
-describe.concurrent("fetch() when the HTTP client thread cannot be spawned", () => {
+describe.concurrent.skipIf(!isDebug)("fetch() when the HTTP client thread cannot be spawned", () => {
   test("rejects with a TypeError containing the OS error instead of panicking", async () => {
     const { stdout, stderr, exitCode } = await run(/* js */ `
       let err;
