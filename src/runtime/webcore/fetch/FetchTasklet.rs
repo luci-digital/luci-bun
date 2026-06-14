@@ -2147,8 +2147,8 @@ impl FetchTasklet {
     ) -> Result<*mut FetchTasklet, BunError> {
         // The sole caller (`fetch_impl`) calls `http_thread::init()` and
         // rejects the promise on failure before reaching here, so the HTTP
-        // thread is known to be running. `HTTPThread::schedule` below asserts
-        // `HTTP_THREAD_INIT` as the safety net for any future caller.
+        // thread is known to be running. Any future caller must do the same;
+        // `init()` is `#[must_use]`.
         let node = Self::get(global, fetch_options, promise)?;
 
         let node_ref = Self::from_raw_mut(node);
