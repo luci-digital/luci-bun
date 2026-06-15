@@ -1404,6 +1404,73 @@ it("preadv", () => {
   expect(buffers[2]).toEqual(new Uint8Array([10, 11, 12]));
 });
 
+it("readvSync with a negative position reads from the current file position", () => {
+  const p = join(tmpdir(), "readv-negpos.txt");
+  writeFileSync(p, "0123456789");
+  const fd = openSync(p, "r");
+  try {
+    // Advance the current position to 4.
+    readSync(fd, Buffer.alloc(4), 0, 4, null);
+    const b1 = Buffer.alloc(2);
+    const b2 = Buffer.alloc(2);
+    const n = readvSync(fd, [b1, b2], -1);
+    expect({ n, b1: b1.toString(), b2: b2.toString() }).toEqual({ n: 4, b1: "45", b2: "67" });
+    // A second readv at -1 should continue from where the first left off.
+    const b3 = Buffer.alloc(2);
+    expect(readvSync(fd, [b3], -1)).toBe(2);
+    expect(b3.toString()).toBe("89");
+  } finally {
+    closeSync(fd);
+  }
+});
+
+it("writevSync with a negative position writes at the current file position", () => {
+  const p = join(tmpdir(), "writev-negpos.txt");
+  writeFileSync(p, "0123456789");
+  const fd = openSync(p, "r+");
+  try {
+    // Advance the current position to 4.
+    readSync(fd, Buffer.alloc(4), 0, 4, null);
+    const n = writevSync(fd, [Buffer.from("AB"), Buffer.from("CD")], -1);
+    expect(n).toBe(4);
+  } finally {
+    closeSync(fd);
+  }
+  expect(readFileSync(p, "utf8")).toBe("0123ABCD89");
+});
+
+it("fs.readv with a negative position reads from the current file position", async () => {
+  const p = join(tmpdir(), "readv-negpos-async.txt");
+  writeFileSync(p, "0123456789");
+  const fd = openSync(p, "r");
+  try {
+    readSync(fd, Buffer.alloc(4), 0, 4, null);
+    const b1 = Buffer.alloc(2);
+    const b2 = Buffer.alloc(2);
+    const { promise, resolve, reject } = Promise.withResolvers<number>();
+    fs.readv(fd, [b1, b2], -1, (err, bytesRead) => (err ? reject(err) : resolve(bytesRead)));
+    const n = await promise;
+    expect({ n, b1: b1.toString(), b2: b2.toString() }).toEqual({ n: 4, b1: "45", b2: "67" });
+  } finally {
+    closeSync(fd);
+  }
+});
+
+it("fs.writev with a negative position writes at the current file position", async () => {
+  const p = join(tmpdir(), "writev-negpos-async.txt");
+  writeFileSync(p, "0123456789");
+  const fd = openSync(p, "r+");
+  try {
+    readSync(fd, Buffer.alloc(4), 0, 4, null);
+    const { promise, resolve, reject } = Promise.withResolvers<number>();
+    fs.writev(fd, [Buffer.from("AB"), Buffer.from("CD")], -1, (err, n) => (err ? reject(err) : resolve(n)));
+    expect(await promise).toBe(4);
+  } finally {
+    closeSync(fd);
+  }
+  expect(readFileSync(p, "utf8")).toBe("0123ABCD89");
+});
+
 describe("writeSync", () => {
   it("works with bigint", () => {
     const dest = join(tmpdir(), "writeSync-large-file-bigint.txt");

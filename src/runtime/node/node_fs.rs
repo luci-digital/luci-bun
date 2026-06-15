@@ -2847,7 +2847,13 @@ pub mod args {
             if let Some(pos_value) = arguments.next_eat() {
                 if !pos_value.is_undefined_or_null() {
                     if pos_value.is_number() {
-                        position = Some(pos_value.to_int64() as u64);
+                        // Node/libuv: a negative offset means "use the current file
+                        // position" (readv/writev, not preadv/pwritev). Matches the
+                        // `position_int >= 0` gate in args::Read/args::Write.
+                        let pos = pos_value.to_int64();
+                        if pos >= 0 {
+                            position = Some(pos as u64);
+                        }
                     } else {
                         // `buffers` never reaches the Unprotect hook on this
                         // path; drop its element roots and pins here.
