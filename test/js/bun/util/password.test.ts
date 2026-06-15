@@ -298,6 +298,12 @@ test("bcrypt PHC verify: oversized salt/hash surfaces as PASSWORD_NO_SPACE_LEFT"
   // an oversized hash, and undersized-alone surfaces as `InvalidEncoding`.
   await check(`$bcrypt$r=4$${salt12}$${hash24}`, "PASSWORD_NO_SPACE_LEFT");
   await check(`$bcrypt$r=4$${salt12}$${hash23}`, "PASSWORD_INVALID_ENCODING");
+
+  // The salt token is decoded before the missing-hash check runs, so an
+  // oversized salt with no hash field still surfaces as `NoSpaceLeft`;
+  // a well-sized salt with no hash field is `InvalidEncoding`.
+  await check(`$bcrypt$r=4$${salt24}`, "PASSWORD_NO_SPACE_LEFT");
+  await check(`$bcrypt$r=4$${salt16}`, "PASSWORD_INVALID_ENCODING");
 });
 
 test("bcrypt pre-hashing does not break compatibility across Bun versions", async () => {

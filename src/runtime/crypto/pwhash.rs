@@ -408,10 +408,14 @@ pub mod bcrypt {
         }
 
         // salt / hash — standard no-pad base64. phc_format.deserialize tokenizes
-        // on `$` in struct-field order and `break`s unconditionally after the
-        // hash field, so any trailing `$`-segments are ignored.
-        let (salt_b64, rest) = rest.split_once('$').ok_or_else(invalid)?;
-        let hash_b64 = rest.split_once('$').map_or(rest, |(h, _)| h);
+        // on `$` in struct-field order, decoding each BinValue field as its
+        // token is consumed; a missing hash token is caught by the post-loop
+        // `set_fields < expected_fields` check, and the loop `break`s
+        // unconditionally after the hash so trailing `$`-segments are ignored.
+        let (salt_b64, hash_b64) = match rest.split_once('$') {
+            Some((salt, rest)) => (salt, Some(rest.split_once('$').map_or(rest, |(h, _)| h))),
+            None => (rest, None),
+        };
         let decoder = &bun_base64::zig_base64::STANDARD_NO_PAD.decoder;
 
         // phc_format.BinValue(N).fromB64: `calcSizeForSlice` failure and
@@ -429,6 +433,7 @@ pub mod bcrypt {
             .decode(&mut salt[..salt_len], salt_b64.as_bytes())
             .map_err(|_| invalid())?;
 
+        let hash_b64 = hash_b64.ok_or_else(invalid)?;
         let mut expected = [0u8; DK_LENGTH];
         let hash_len = decoder
             .calc_size_for_slice(hash_b64.as_bytes())
