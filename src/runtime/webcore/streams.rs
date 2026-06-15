@@ -1523,8 +1523,13 @@ impl<const SSL: bool, const HTTP3: bool> HTTPServerWritable<SSL, HTTP3> {
         }
 
         self.buffer.clear_retaining_capacity();
-        self.buffer
-            .ensure_total_capacity_precise(self.high_water_mark as usize);
+        if self
+            .buffer
+            .try_reserve_exact(self.high_water_mark as usize)
+            .is_err()
+        {
+            return Err(SysError::oom());
+        }
 
         self.done = false;
         self.signal.start();
