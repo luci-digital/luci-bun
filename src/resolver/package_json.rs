@@ -1811,7 +1811,10 @@ impl<'a> Visitor<'a> {
                 // or containing only a single "*", sorted by the sorting function
                 // PATTERN_KEY_COMPARE which orders in descending order of specificity.
                 expansion_keys.sort_by(|&a, &b| {
-                    strings::glob_length_compare(&map_data[a as usize].key, &map_data[b as usize].key)
+                    strings::glob_length_compare(
+                        &map_data[a as usize].key,
+                        &map_data[b as usize].key,
+                    )
                 });
 
                 return Entry {
