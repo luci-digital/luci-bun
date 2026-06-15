@@ -3357,7 +3357,6 @@ bitflags::bitflags! {
         /// pre-handshake bytes / read the underlying TCP stream.
         const BYPASS_TLS           = 1 << 9;
         const OWNS_HANDLERS        = 1 << 10;
-        // bits 11..15 unused (Zig: `_: u6 = 0`)
     }
 }
 
