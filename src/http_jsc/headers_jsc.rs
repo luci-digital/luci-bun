@@ -203,3 +203,18 @@ pub fn h2_live_counts(global: &JSGlobalObject, frame: &CallFrame) -> JsResult<JS
 pub fn h3_quic_live_counts(global: &JSGlobalObject, frame: &CallFrame) -> JsResult<JSValue> {
     H3TestingAPIs::quic_live_counts(global, frame)
 }
+
+/// `bun:internal-for-testing` probe for the pooled HTTP/1.1 request-build
+/// buffer. Returns the capacity (in bytes) currently parked in the HTTP
+/// thread's pool slot, or 0 when the slot is empty. Lets tests assert the
+/// buffer is actually being reused across requests instead of reallocated.
+#[inline]
+pub fn http_thread_pooled_request_buffer_capacity(
+    _global: &JSGlobalObject,
+    _frame: &CallFrame,
+) -> JsResult<JSValue> {
+    use bun_http::http_thread;
+    Ok(JSValue::js_number_from_uint64(
+        http_thread::pooled_request_buffer_capacity.load(Ordering::Relaxed) as u64,
+    ))
+}

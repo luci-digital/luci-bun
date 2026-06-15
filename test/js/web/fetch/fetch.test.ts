@@ -2830,3 +2830,94 @@ it("does not reuse a keep-alive connection whose response carried more bytes tha
     server.close();
   }
 });
+
+// The HTTP/1.1 request-build scratch buffer is pooled on the HTTP thread and
+// reused across requests. This test interleaves small and large request
+// bodies so a bug in the pooled buffer's clear/grow/reuse path (stale bytes
+// from a previous request, wrong capacity accounting, body prefix truncation
+// after the buffer has grown) surfaces as a wrong body length or wrong bytes
+// at the server.
+it("request build buffer is reused correctly across small and large HTTP/1.1 bodies", async () => {
+  using server = Bun.serve({
+    port: 0,
+    async fetch(req) {
+      const body = new Uint8Array(await req.arrayBuffer());
+      // Echo a compact description of what the server actually received so
+      // we can assert exact bytes without shipping megabytes back.
+      return Response.json({
+        method: req.method,
+        length: body.length,
+        first: body.length > 0 ? body[0] : null,
+        last: body.length > 0 ? body[body.length - 1] : null,
+      });
+    },
+  });
+  const url = server.url.href;
+
+  // Small GETs: the common path (headers only, <32 KiB), many times so any
+  // stale state in the reused buffer would accumulate.
+  for (let i = 0; i < 64; i++) {
+    const res = await fetch(url);
+    expect(await res.json()).toEqual({ method: "GET", length: 0, first: null, last: null });
+  }
+
+  // Large POST (>32 KiB): forces the pooled buffer to grow to the 512 KiB tier.
+  const large = Buffer.alloc(96 * 1024, 0x41);
+  large[0] = 0x5b;
+  large[large.length - 1] = 0x5d;
+  {
+    const res = await fetch(url, { method: "POST", body: large });
+    expect(await res.json()).toEqual({ method: "POST", length: large.length, first: 0x5b, last: 0x5d });
+  }
+
+  // Small POST after a large one: the pooled buffer is now oversized relative
+  // to the request; must not leak bytes from the previous large body or
+  // mis-account the body prefix written into the spare capacity.
+  const small = Buffer.alloc(512, 0x42);
+  small[0] = 0x7b;
+  small[small.length - 1] = 0x7d;
+  for (let i = 0; i < 16; i++) {
+    const res = await fetch(url, { method: "POST", body: small });
+    expect(await res.json()).toEqual({ method: "POST", length: small.length, first: 0x7b, last: 0x7d });
+  }
+
+  // Large again: buffer is already large enough, no growth needed.
+  {
+    const res = await fetch(url, { method: "POST", body: large });
+    expect(await res.json()).toEqual({ method: "POST", length: large.length, first: 0x5b, last: 0x5d });
+  }
+
+  // One more burst of small GETs.
+  for (let i = 0; i < 64; i++) {
+    const res = await fetch(url);
+    expect(await res.json()).toEqual({ method: "GET", length: 0, first: null, last: null });
+  }
+});
+
+// Regression: the Rust port of the request-build buffer was allocating (and
+// zeroing) a fresh 32 KiB heap buffer per HTTP/1.1 request, then discarding
+// it, plus a second 32 KiB Vec for the actual writer. The Zig original used
+// a stack buffer with zero per-request heap traffic. The fix pools a single
+// Vec on the HTTP thread; this test asserts the pool slot is populated (and
+// sized to at least the small-request tier) after a plain small request.
+it("HTTP/1.1 request build buffer is pooled, not reallocated per request", async () => {
+  const { httpThreadInternals } = require("bun:internal-for-testing");
+  using server = Bun.serve({ port: 0, fetch: () => new Response("ok") });
+  const url = server.url.href;
+
+  // Two sequential small requests: first may allocate, second must reuse.
+  const r1 = await fetch(url);
+  expect(await r1.text()).toBe("ok");
+  const r2 = await fetch(url);
+  expect(await r2.text()).toBe("ok");
+
+  // At idle the HTTP thread has returned its scratch Vec to the pool; its
+  // capacity is at least the 32 KiB small-request tier.
+  expect(httpThreadInternals.pooledRequestBufferCapacity()).toBeGreaterThanOrEqual(32 * 1024);
+
+  // Large body pushes the pool to the 512 KiB tier.
+  const big = Buffer.alloc(64 * 1024, 0x61);
+  const r3 = await fetch(url, { method: "POST", body: big });
+  expect(await r3.text()).toBe("ok");
+  expect(httpThreadInternals.pooledRequestBufferCapacity()).toBeGreaterThanOrEqual(512 * 1024);
+});

@@ -333,6 +333,14 @@ export const fetchH3Internals = {
   },
 };
 
+export const httpThreadInternals = {
+  pooledRequestBufferCapacity: $newZigFunction(
+    "http/HTTPThread.zig",
+    "TestingAPIs.pooledRequestBufferCapacity",
+    0,
+  ) as () => number,
+};
+
 export const fileSinkInternals = {
   liveCount: $newZigFunction("runtime/webcore/FileSink.zig", "TestingAPIs.fileSinkLiveCount", 0) as () => number,
 };
