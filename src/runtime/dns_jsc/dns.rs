@@ -4429,8 +4429,10 @@ impl Resolver {
         unsafe {
             let mut pending = (*key.lookup).head.next;
             let mut prev_global = (*key.lookup).head.global_this();
-            let mut array =
-                to_completion(prev_global, (*addr).to_js_response(prev_global, T::TYPE_NAME));
+            let mut array = to_completion(
+                prev_global,
+                (*addr).to_js_response(prev_global, T::TYPE_NAME),
+            );
             // SAFETY: addr is the c-ares-allocated reply; freed once after all consumers run.
             let _free_addr = scopeguard::guard(addr, |a| T::destroy(a));
             completion_keep_alive(&array);
@@ -4442,10 +4444,8 @@ impl Resolver {
             while let Some(value) = pending {
                 let new_global = (*value.as_ptr()).global_this();
                 if !core::ptr::eq(prev_global, new_global) {
-                    array = to_completion(
-                        new_global,
-                        (*addr).to_js_response(new_global, T::TYPE_NAME),
-                    );
+                    array =
+                        to_completion(new_global, (*addr).to_js_response(new_global, T::TYPE_NAME));
                     prev_global = new_global;
                 }
                 pending = (*value.as_ptr()).next;
