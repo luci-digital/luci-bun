@@ -865,6 +865,14 @@ unsafe fn auto_tick(vm: *mut VirtualMachine) {
     // `bun_jsc::event_loop` (per-task body dispatched via `__bun_run_immediate_task`),
     // so `immediate_tasks` after this call reflects next-tick immediates and
     // the `has_pending_immediate` read below is correct.
+    // `immediate_fired` records whether anything will run: the immediate
+    // drops its loop ref BEFORE invoking its callback (so `is_active()`
+    // below can already be false), and the callback may have satisfied the
+    // driver's wait condition — parking on an unref'd-timer deadline in
+    // that state would delay the driver re-checking for no reason.
+    // SAFETY: `el` is the live per-thread event loop.
+    let immediate_fired = !unsafe { &*el }.immediate_tasks.is_empty()
+        || !unsafe { &*el }.next_immediate_tasks.is_empty();
     // SAFETY: `el` is the live per-thread event loop; `vm` per fn contract.
     unsafe { (*el).tick_immediate_tasks(vm) };
     #[cfg(windows)]
@@ -966,6 +974,15 @@ unsafe fn auto_tick(vm: *mut VirtualMachine) {
             unsafe {
                 (*loop_).tick_with_timeout(if have_timeout { Some(&timespec) } else { None })
             };
+        } else if immediate_fired {
+            // An immediate ran above; its callback (and the microtask drain
+            // that follows it) may have already satisfied the driver's wait
+            // condition, and the immediate's loop ref was dropped before the
+            // callback, so `is_active()` is false here. Return to the driver
+            // via a non-blocking pump instead of parking on an unref'd-timer
+            // deadline it no longer cares about.
+            // SAFETY: `loop_` is the live per-thread uws loop.
+            unsafe { (*loop_).tick_without_idle() };
         } else {
             // Nothing refs the loop, but the caller (`waitForPromise`,
             // `bun:test`'s drive loop, the module loader) is still ticking

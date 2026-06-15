@@ -73,3 +73,27 @@ it("waiting on an unref'd timer parks the event loop instead of spinning", async
   });
   expect(output.cpuMs).toBeLessThan(1000);
 });
+
+it("awaiting setImmediate exits promptly when an unref'd timer is pending", async () => {
+  // The idle-park branch must not delay process exit when a setImmediate
+  // was the last thing refing the loop and its callback already satisfied
+  // the driver's wait condition. Measured as wall time to exit (the
+  // in-script await resolves before the park would begin).
+  const start = Date.now();
+  await using proc = Bun.spawn({
+    cmd: [
+      bunExe(),
+      "-e",
+      `setTimeout(() => {}, 60000).unref();
+      await new Promise(resolve => setImmediate(resolve));`,
+    ],
+    env: bunEnv,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([proc.stdout.text(), proc.stderr.text(), proc.exited]);
+  const wallMs = Date.now() - start;
+  expect(stderr).toBe("");
+  expect({ stdout, exitCode }).toEqual({ stdout: "", exitCode: 0 });
+  expect(wallMs).toBeLessThan(10000);
+});
