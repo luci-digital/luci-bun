@@ -1,10 +1,11 @@
 use core::ffi::c_void;
+use core::marker::PhantomData;
 use core::ptr::NonNull;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use bun_collections::ArrayHashMap;
-use bun_core::{self, Output};
+use bun_core::{self, Output, UnwrapOrOom};
 
 use bun_threading::{Mutex, UnboundedQueue};
 use bun_uws as uws;
@@ -205,6 +206,9 @@ impl HttpThread {
 pub struct RequestBodyBuffer {
     // Option<> so Drop can `.take()` and return the Vec to the pool by value.
     buffer: Option<Vec<u8>>,
+    // `Drop` touches `http_thread_mut()`; the guard must stay on the HTTP
+    // thread. `*mut ()` makes the struct `!Send` + `!Sync`.
+    _thread_affine: PhantomData<*mut ()>,
 }
 
 impl Drop for RequestBodyBuffer {
@@ -417,9 +421,12 @@ impl HttpThread {
                 target,
                 estimated_size
             );
-            buf.reserve(target);
+            buf.try_reserve(target).unwrap_or_oom();
         }
-        RequestBodyBuffer { buffer: Some(buf) }
+        RequestBodyBuffer {
+            buffer: Some(buf),
+            _thread_affine: PhantomData,
+        }
     }
 
     pub fn deflater(&mut self) -> &mut LibdeflateState {

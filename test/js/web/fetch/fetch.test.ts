@@ -24,6 +24,9 @@ import net from "net";
 import { join } from "path";
 import { Readable } from "stream";
 import { gzipSync } from "zlib";
+// Namespace import so a missing binding fails only the test that uses it
+// (accessing an absent export is `undefined`), not the whole file.
+import * as internalForTesting from "bun:internal-for-testing";
 const tmp_dir = tmpdirSync();
 const fetchFixture3 = join(import.meta.dir, "fetch-leak-test-fixture-3.js");
 const fetchFixture4 = join(import.meta.dir, "fetch-leak-test-fixture-4.js");
@@ -2901,7 +2904,7 @@ it("request build buffer is reused correctly across small and large HTTP/1.1 bod
 // Vec on the HTTP thread; this test asserts the pool slot is populated (and
 // sized to at least the small-request tier) after a plain small request.
 it("HTTP/1.1 request build buffer is pooled, not reallocated per request", async () => {
-  const { httpThreadInternals } = require("bun:internal-for-testing");
+  const { httpThreadInternals } = internalForTesting;
   using server = Bun.serve({ port: 0, fetch: () => new Response("ok") });
   const url = server.url.href;
 
