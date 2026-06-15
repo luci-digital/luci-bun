@@ -408,22 +408,16 @@ pub mod bcrypt {
         }
 
         // salt / hash — standard no-pad base64. phc_format.deserialize tokenizes
-        // on `$` and parses struct fields in order, rejecting leftover tokens as
-        // `InvalidEncoding` only after every field has been consumed; split any
-        // trailing segment off `hash_b64` here so the per-field size checks run
-        // on the isolated hash token, and defer the leftover-token rejection
-        // until after them so an oversized field still surfaces `NoSpaceLeft`.
+        // on `$` in struct-field order and `break`s unconditionally after the
+        // hash field, so any trailing `$`-segments are ignored.
         let (salt_b64, rest) = rest.split_once('$').ok_or_else(invalid)?;
-        let (hash_b64, extra) = match rest.split_once('$') {
-            Some((h, _)) => (h, true),
-            None => (rest, false),
-        };
+        let hash_b64 = rest.split_once('$').map_or(rest, |(h, _)| h);
         let decoder = &bun_base64::zig_base64::STANDARD_NO_PAD.decoder;
 
-        // phc_format.BinValue(N).fromB64 semantics: `calcSizeForSlice` failure
-        // and `decode` failure surface as `InvalidEncoding`, but a decoded
-        // length overflowing the N-byte bounded buffer surfaces as
-        // `NoSpaceLeft`.
+        // phc_format.BinValue(N).fromB64: `calcSizeForSlice` failure and
+        // `decode` failure surface as `InvalidEncoding`; a decoded length
+        // overflowing the N-byte bounded buffer surfaces as `NoSpaceLeft`;
+        // undersized input (len < N) is accepted at this stage.
         let mut salt = [0u8; SALT_LENGTH];
         let salt_len = decoder
             .calc_size_for_slice(salt_b64.as_bytes())
@@ -431,11 +425,8 @@ pub mod bcrypt {
         if salt_len > SALT_LENGTH {
             return Err(bun_core::err!("NoSpaceLeft"));
         }
-        if salt_len != SALT_LENGTH {
-            return Err(invalid());
-        }
         decoder
-            .decode(&mut salt, salt_b64.as_bytes())
+            .decode(&mut salt[..salt_len], salt_b64.as_bytes())
             .map_err(|_| invalid())?;
 
         let mut expected = [0u8; DK_LENGTH];
@@ -445,14 +436,13 @@ pub mod bcrypt {
         if hash_len > DK_LENGTH {
             return Err(bun_core::err!("NoSpaceLeft"));
         }
-        if hash_len != DK_LENGTH {
-            return Err(invalid());
-        }
         decoder
-            .decode(&mut expected, hash_b64.as_bytes())
+            .decode(&mut expected[..hash_len], hash_b64.as_bytes())
             .map_err(|_| invalid())?;
 
-        if extra {
+        // bcrypt.zig `PhcFormatHasher.verify` rejects undersized salt/hash
+        // after `deserialize` has parsed both fields.
+        if salt_len != SALT_LENGTH || hash_len != DK_LENGTH {
             return Err(invalid());
         }
 
