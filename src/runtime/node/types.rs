@@ -1723,7 +1723,7 @@ impl FileSystemFlags {
                     .to_js(),
                 ));
             }
-            let number = val.coerce_to_i32(ctx)?;
+            let number = val.coerce::<i32>(ctx)?;
             let flags = number.max(0);
             // On Windows, numeric flags from fs.constants (e.g. O_CREAT=0x100)
             // use the platform's native MSVC/libuv values which differ from the
