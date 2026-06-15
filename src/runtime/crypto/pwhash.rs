@@ -411,12 +411,18 @@ pub mod bcrypt {
         let (salt_b64, hash_b64) = rest.split_once('$').ok_or_else(invalid)?;
         let decoder = &bun_base64::zig_base64::STANDARD_NO_PAD.decoder;
 
+        // phc_format.BinValue(N).fromB64 semantics: `calcSizeForSlice` failure
+        // and `decode` failure surface as `InvalidEncoding`, but a decoded
+        // length overflowing the N-byte bounded buffer surfaces as
+        // `NoSpaceLeft`.
         let mut salt = [0u8; SALT_LENGTH];
-        if decoder
+        let salt_len = decoder
             .calc_size_for_slice(salt_b64.as_bytes())
-            .map_err(|_| invalid())?
-            != SALT_LENGTH
-        {
+            .map_err(|_| invalid())?;
+        if salt_len > SALT_LENGTH {
+            return Err(bun_core::err!("NoSpaceLeft"));
+        }
+        if salt_len != SALT_LENGTH {
             return Err(invalid());
         }
         decoder
@@ -424,11 +430,13 @@ pub mod bcrypt {
             .map_err(|_| invalid())?;
 
         let mut expected = [0u8; DK_LENGTH];
-        if decoder
+        let hash_len = decoder
             .calc_size_for_slice(hash_b64.as_bytes())
-            .map_err(|_| invalid())?
-            != DK_LENGTH
-        {
+            .map_err(|_| invalid())?;
+        if hash_len > DK_LENGTH {
+            return Err(bun_core::err!("NoSpaceLeft"));
+        }
+        if hash_len != DK_LENGTH {
             return Err(invalid());
         }
         decoder
