@@ -1903,15 +1903,11 @@ impl<'a> HTTPClient<'a> {
         self.fail(err!(ConnectionRefused));
     }
 
-    /// Get the buffer we use to write data to the network.
-    ///
-    /// For large files, we want to avoid extra network send overhead
-    /// So we do two things:
-    /// 1. Use a 32 KB stack buffer for small files
-    /// 2. Use a 512 KB heap buffer for large files
-    /// This only has an impact on http://
-    ///
-    /// On https://, we are limited to a 16 KB TLS record size.
+    /// Take the HTTP thread's pooled scratch `Vec` for assembling the
+    /// request payload, reserved to 32 KiB for small requests or 512 KiB for
+    /// large ones (see [`http_thread::RequestBodyBuffer`] for the pooling
+    /// mechanics). The tiering only matters for `http://`; on `https://` we
+    /// are limited to a 16 KB TLS record size.
     #[inline]
     fn get_request_body_send_buffer(&self) -> http_thread::RequestBodyBuffer {
         let actual_estimated_size =
