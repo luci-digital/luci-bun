@@ -296,12 +296,29 @@ test("name and lastModified live on File.prototype, not Blob.prototype", () => {
   expect("name" in slice).toBe(false);
   expect(slice[Symbol.toStringTag]).toBe("Blob");
 
+  // structuredClone preserves File-ness.
+  const cloned = structuredClone(file);
+  expect(Object.getPrototypeOf(cloned)).toBe(File.prototype);
+  expect(cloned.name).toBe("bar.txt");
+  expect(Object.getPrototypeOf(structuredClone(new Blob(["x"])))).toBe(Blob.prototype);
+
   // Bun.file() keeps its documented .name / .lastModified via File.prototype.
   const bunFile = Bun.file(import.meta.path);
   expect("name" in bunFile).toBe(true);
   expect(bunFile.name).toBe(import.meta.path);
   expect(typeof bunFile.lastModified).toBe("number");
   expect(bunFile instanceof Blob).toBe(true);
+});
+
+test("Body.blob() returns a plain Blob even when the body is a File", async () => {
+  const bodies = [new File(["hello"], "x.txt"), Bun.file(import.meta.path)];
+  for (const body of bodies) {
+    const result = await new Response(body).blob();
+    expect(Object.getPrototypeOf(result)).toBe(Blob.prototype);
+    expect(result instanceof File).toBe(false);
+    expect("name" in result).toBe(false);
+    expect(result[Symbol.toStringTag]).toBe("Blob");
+  }
 });
 
 test("File.prototype.constructor is set before the File global is touched", async () => {

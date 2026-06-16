@@ -3747,13 +3747,6 @@ impl BlobExt for Blob {
             return crate::webcore::s3_file::to_js_unchecked(global_object, this);
         }
 
-        // `name` and `lastModified` live on File.prototype, not Blob.prototype.
-        // Route `new File()` results and `Bun.file()` (file-backed store)
-        // through the File structure so those accessors are reachable.
-        if self.is_jsdom_file.get() || self.is_bun_file() {
-            return dom_file_to_js_unchecked(global_object, this);
-        }
-
         js::to_js_unchecked(global_object, this)
     }
 
@@ -4338,9 +4331,15 @@ fn _on_structured_clone_deserialize<B: AsRef<[u8]>>(
     let _ = content_type;
 
     let blob_ptr = scopeguard::ScopeGuard::into_inner(blob_guard);
-    // SAFETY: blob_ptr is valid; toJS is infallible. Explicit `&mut *` forces
-    // the inherent `Blob::to_js(&mut self)` over `JsClass::to_js(self)`.
-    Ok(unsafe { BlobExt::to_js(&*blob_ptr, global_this) })
+    // SAFETY: blob_ptr is valid; toJS is infallible.
+    let blob_ref = unsafe { &*blob_ptr };
+    // Preserve the prototype the source had: File for `new File()` / `Bun.file()`
+    // round-trips, Blob otherwise. `to_js` handles the S3 case.
+    if blob_ref.is_jsdom_file.get() || blob_ref.is_bun_file() {
+        blob_ref.calculate_estimated_byte_size();
+        return Ok(dom_file_to_js_unchecked(global_this, blob_ptr));
+    }
+    Ok(BlobExt::to_js(blob_ref, global_this))
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -5844,10 +5843,11 @@ pub fn construct_bun_file(
         }
     }
 
+    blob.calculate_estimated_byte_size();
     let ptr = Blob::new(blob);
-    // SAFETY: ptr was just produced by heap::alloc in Blob::new. Explicit
-    // `&mut *` forces inherent `Blob::to_js(&mut self)` over `JsClass::to_js(self)`.
-    Ok(unsafe { BlobExt::to_js(&*ptr, global_object) })
+    // Bun.file() results inherit from File.prototype so the documented
+    // `.name` / `.lastModified` accessors are reachable.
+    Ok(dom_file_to_js_unchecked(global_object, ptr))
 }
 
 // `find_or_create_file_from_path`: canonical impl lives later in this file
