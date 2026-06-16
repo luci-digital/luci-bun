@@ -1,9 +1,9 @@
 // https://github.com/oven-sh/bun/issues/4459
 // http.Server#getConnections was not implemented.
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import { once } from "node:events";
 import http from "node:http";
 import net from "node:net";
-import { once } from "node:events";
 
 describe("http.Server getConnections", () => {
   test("exists and reports the number of open connections", async () => {
