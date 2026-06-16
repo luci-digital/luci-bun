@@ -82,9 +82,7 @@ describe("http.Server getConnections", () => {
 
       // Node passes the callback straight to process.nextTick, which validates
       // it and throws ERR_INVALID_ARG_TYPE for non-functions.
-      expect(() => server.getConnections()).toThrow(
-        expect.objectContaining({ code: "ERR_INVALID_ARG_TYPE" }),
-      );
+      expect(() => server.getConnections()).toThrow(expect.objectContaining({ code: "ERR_INVALID_ARG_TYPE" }));
       expect(() => server.getConnections("not a function" as any)).toThrow(
         expect.objectContaining({ code: "ERR_INVALID_ARG_TYPE" }),
       );
