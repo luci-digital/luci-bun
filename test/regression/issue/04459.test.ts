@@ -79,19 +79,48 @@ describe("http.Server getConnections", () => {
       sync = false;
       expect(ret).toBe(server);
       await promise;
+
+      // Node passes the callback straight to process.nextTick, which validates
+      // it and throws ERR_INVALID_ARG_TYPE for non-functions.
+      expect(() => server.getConnections()).toThrow(
+        expect.objectContaining({ code: "ERR_INVALID_ARG_TYPE" }),
+      );
+      expect(() => server.getConnections("not a function" as any)).toThrow(
+        expect.objectContaining({ code: "ERR_INVALID_ARG_TYPE" }),
+      );
     } finally {
       await new Promise<void>(resolve => server.close(() => resolve()));
     }
   });
 
-  test("returns 0 after the server is closed", async () => {
+  test("still reports open connections after close() is called", async () => {
+    let connected: Promise<void>;
     const server = http.createServer(() => {});
+    connected = new Promise<void>(resolve => server.once("connection", () => resolve()));
     await once(server.listen(0), "listening");
-    await new Promise<void>(resolve => server.close(() => resolve()));
-    const count = await new Promise<number>((resolve, reject) => {
-      server.getConnections((err, n) => (err ? reject(err) : resolve(n)));
-    });
-    expect(count).toBe(0);
+    const { port } = server.address() as net.AddressInfo;
+
+    const sock = net.connect({ port, host: "127.0.0.1" });
+    await once(sock, "connect");
+    sock.write("GET / HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n");
+    await connected;
+
+    const getConnections = () =>
+      new Promise<number>((resolve, reject) => {
+        server.getConnections((err, n) => (err ? reject(err) : resolve(n)));
+      });
+
+    // close() stops accepting new connections but the existing one is still open.
+    server.close();
+    expect(await getConnections()).toBe(1);
+    expect(server._connections).toBe(1);
+
+    sock.destroy();
+    while ((await getConnections()) > 0) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    expect(await getConnections()).toBe(0);
+    expect(server._connections).toBe(0);
   });
 
   test("is usable inside a request handler (original report)", async () => {
