@@ -5617,21 +5617,21 @@ pub fn dom_file_to_js_unchecked(global: &JSGlobalObject, this: *mut Blob) -> JSV
 bun_jsc::jsc_host_abi! {
     #[unsafe(no_mangle)]
     pub unsafe fn JSDOMFile__getName(this: &Blob, this_value: JSValue, global: &JSGlobalObject) -> JSValue {
-        bun_jsc::host_fn::host_fn_getter_this_shared(this, this_value, global, |t, v, g| Blob::get_name(t, v, g))
+        bun_jsc::host_fn::host_fn_getter_this_shared(this, this_value, global, Blob::get_name)
     }
 }
 
 bun_jsc::jsc_host_abi! {
     #[unsafe(no_mangle)]
     pub unsafe fn JSDOMFile__setName(this: &Blob, this_value: JSValue, global: &JSGlobalObject, value: JSValue) -> bool {
-        bun_jsc::host_fn::host_fn_setter_this_shared(this, this_value, global, value, |t, tv, g, v| Blob::set_name(t, tv, g, v))
+        bun_jsc::host_fn::host_fn_setter_this_shared(this, this_value, global, value, Blob::set_name)
     }
 }
 
 bun_jsc::jsc_host_abi! {
     #[unsafe(no_mangle)]
     pub unsafe fn JSDOMFile__getLastModified(this: &Blob, global: &JSGlobalObject) -> JSValue {
-        bun_jsc::host_fn::host_fn_getter_shared(this, global, |t, g| Blob::get_last_modified(t, g))
+        bun_jsc::host_fn::host_fn_getter_shared(this, global, Blob::get_last_modified)
     }
 }
 
