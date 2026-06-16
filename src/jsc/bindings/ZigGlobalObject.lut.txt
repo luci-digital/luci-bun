@@ -25,7 +25,7 @@
   global                          GlobalObject_getGlobalThis                           PropertyCallback
 
   Bun                             GlobalObject::m_bunObject                            CellProperty|DontDelete|ReadOnly
-  File                            GlobalObject::m_JSDOMFileConstructor                 CellProperty
+  File                            GlobalObject::m_JSDOMFileClassStructure              ClassStructure
   crypto                          GlobalObject::m_cryptoObject                         CellProperty
   navigator                       GlobalObject::m_navigatorObject                      CellProperty
   performance                     GlobalObject::m_performanceObject                    CellProperty

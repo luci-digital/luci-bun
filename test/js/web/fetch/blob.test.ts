@@ -289,12 +289,42 @@ test("name and lastModified live on File.prototype, not Blob.prototype", () => {
 
   expect(new Blob() instanceof File).toBe(false);
 
+  // File.prototype.slice() returns a plain Blob, not a File.
+  const slice = file.slice(0, 2);
+  expect(Object.getPrototypeOf(slice)).toBe(Blob.prototype);
+  expect(slice instanceof File).toBe(false);
+  expect("name" in slice).toBe(false);
+  expect(slice[Symbol.toStringTag]).toBe("Blob");
+
   // Bun.file() keeps its documented .name / .lastModified via File.prototype.
   const bunFile = Bun.file(import.meta.path);
   expect("name" in bunFile).toBe(true);
   expect(bunFile.name).toBe(import.meta.path);
   expect(typeof bunFile.lastModified).toBe("number");
   expect(bunFile instanceof Blob).toBe(true);
+});
+
+test("File.prototype.constructor is set before the File global is touched", async () => {
+  // Bun.file() creates an instance with File.prototype before anything reads
+  // globalThis.File; .constructor must still resolve to File, not Blob.
+  await using proc = Bun.spawn({
+    cmd: [
+      bunExe(),
+      "-e",
+      `const c = Bun.file("/tmp/x").constructor; console.log(c.name, c === File);`,
+    ],
+    env: bunEnv,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    proc.stdout.text(),
+    proc.stderr.text(),
+    proc.exited,
+  ]);
+  expect(stderr).toBe("");
+  expect(stdout.trim()).toBe("File true");
+  expect(exitCode).toBe(0);
 });
 
 test("#12894", () => {

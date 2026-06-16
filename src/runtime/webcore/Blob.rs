@@ -2011,6 +2011,9 @@ impl BlobExt for Blob {
         // This copies over the charset field
         // which is okay because this will only be a <= slice
         let blob = self.dupe();
+        // https://w3c.github.io/FileAPI/#slice-method-algo returns a new Blob,
+        // not a File, so drop the File marker carried over by dupe().
+        blob.is_jsdom_file.set(false);
         blob.offset.set(offset);
         blob.size.set(len);
 
@@ -3745,8 +3748,8 @@ impl BlobExt for Blob {
         }
 
         // `name` and `lastModified` live on File.prototype, not Blob.prototype.
-        // Route `new File()` results, `Bun.file()` (file-backed store) and their
-        // slices through the File structure so those accessors are reachable.
+        // Route `new File()` results and `Bun.file()` (file-backed store)
+        // through the File structure so those accessors are reachable.
         if self.is_jsdom_file.get() || self.is_bun_file() {
             return dom_file_to_js_unchecked(global_object, this);
         }

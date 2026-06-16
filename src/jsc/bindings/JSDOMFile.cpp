@@ -4,7 +4,8 @@
 #include <JavaScriptCore/ObjectConstructor.h>
 #include <JavaScriptCore/InternalFunction.h>
 #include <JavaScriptCore/FunctionPrototype.h>
-#include "ErrorCode.h"
+#include <JavaScriptCore/LazyClassStructure.h>
+#include <JavaScriptCore/LazyClassStructureInlines.h>
 #include "JSDOMFile.h"
 
 using namespace JSC;
@@ -136,17 +137,12 @@ public:
         return JSC::Structure::create(vm, globalObject, prototype, JSC::TypeInfo(InternalFunctionType, StructureFlags), info());
     }
 
-    static JSDOMFileConstructor* create(JSC::VM& vm, JSGlobalObject* globalObject)
+    static JSDOMFileConstructor* create(JSC::VM& vm, JSGlobalObject* globalObject, JSObject* prototype)
     {
         auto* zigGlobal = defaultGlobalObject(globalObject);
         auto* structure = createStructure(vm, globalObject, zigGlobal->JSBlobConstructor());
         auto* object = new (NotNull, JSC::allocateCell<JSDOMFileConstructor>(vm)) JSDOMFileConstructor(vm, structure);
-        object->finishCreation(vm, globalObject);
-
-        auto* fileStructure = zigGlobal->JSDOMFileStructure();
-        auto* prototype = fileStructure->storedPrototypeObject();
-        object->putDirect(vm, vm.propertyNames->prototype, prototype, PropertyAttribute::DontEnum | PropertyAttribute::DontDelete | PropertyAttribute::ReadOnly | 0);
-        prototype->putDirect(vm, vm.propertyNames->constructor, object, PropertyAttribute::DontEnum | 0);
+        object->finishCreation(vm, prototype);
         return object;
     }
 
@@ -186,26 +182,26 @@ public:
     }
 
 private:
-    void finishCreation(JSC::VM& vm, JSC::JSGlobalObject* globalObject)
+    void finishCreation(JSC::VM& vm, JSObject* prototype)
     {
         Base::finishCreation(vm, 2, "File"_s);
+        putDirect(vm, vm.propertyNames->prototype, prototype, PropertyAttribute::DontEnum | PropertyAttribute::DontDelete | PropertyAttribute::ReadOnly | 0);
     }
 };
 
 const JSC::ClassInfo JSDOMFileConstructor::s_info = { "File"_s, &Base::s_info, nullptr, nullptr, CREATE_METHOD_TABLE(JSDOMFileConstructor) };
 
-JSC::JSObject* createJSDOMFileConstructor(JSC::VM& vm, JSC::JSGlobalObject* globalObject)
+void initJSDOMFileClassStructure(JSC::LazyClassStructure::Initializer& init)
 {
-    return JSDOMFileConstructor::create(vm, globalObject);
-}
-
-JSC::Structure* createJSDOMFileStructure(JSC::VM& vm, JSC::JSGlobalObject* globalObject)
-{
-    auto* zigGlobal = defaultGlobalObject(globalObject);
+    auto* zigGlobal = defaultGlobalObject(init.global);
     auto* superPrototype = zigGlobal->JSBlobPrototype();
-    auto* protoStructure = JSDOMFilePrototype::createStructure(vm, globalObject, superPrototype);
-    auto* prototype = JSDOMFilePrototype::create(vm, globalObject, protoStructure);
-    return WebCore::JSBlob::createStructure(vm, globalObject, prototype);
+    auto* protoStructure = JSDOMFilePrototype::createStructure(init.vm, init.global, superPrototype);
+    auto* prototype = JSDOMFilePrototype::create(init.vm, init.global, protoStructure);
+    auto* structure = WebCore::JSBlob::createStructure(init.vm, init.global, prototype);
+    auto* constructor = JSDOMFileConstructor::create(init.vm, init.global, prototype);
+    init.setPrototype(prototype);
+    init.setStructure(structure);
+    init.setConstructor(constructor);
 }
 
 extern "C" SYSV_ABI JSC::EncodedJSValue BUN__createJSDOMFileUnsafely(JSC::JSGlobalObject* lexicalGlobalObject, void* ptr)
