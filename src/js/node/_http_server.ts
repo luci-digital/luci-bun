@@ -216,6 +216,7 @@ function Server(options, callback): void {
   this[kConnectionsCheckingInterval] = { _destroyed: false };
 
   this.listening = false;
+  this._connections = 0;
   this._unref = false;
   this.maxRequestsPerSocket = 0;
   this[kInternalSocketData] = undefined;
@@ -323,6 +324,13 @@ Server.prototype.closeAllConnections = function () {
 Server.prototype.closeIdleConnections = function () {
   const server = this[serverSymbol];
   server?.closeIdleConnections();
+};
+
+Server.prototype.getConnections = function (callback) {
+  if (typeof callback === "function") {
+    process.nextTick(callback, null, this[serverSymbol] ? this._connections : 0);
+  }
+  return this;
 };
 
 Server.prototype.close = function (optionalCallback?) {
@@ -822,7 +830,7 @@ function onServerClientError(ssl: boolean, socket: unknown, errorCode: number, r
       break;
   }
   err.rawPacket = rawPacket;
-  const nodeSocket = new NodeHTTPServerSocket(self, socket, ssl);
+  const nodeSocket = socket.duplex || new NodeHTTPServerSocket(self, socket, ssl);
   self.emit("connection", nodeSocket);
   self.emit("clientError", err, nodeSocket);
   if (nodeSocket.listenerCount("error") > 0) {
@@ -845,6 +853,7 @@ const NodeHTTPServerSocket = class Socket extends Duplex {
   constructor(server: Server, handle, encrypted) {
     super();
     this.server = server;
+    if (server) server._connections++;
     this[kHandle] = handle;
     this._secureEstablished = !!handle?.secureEstablished;
     handle.onclose = this.#onClose.bind(this);
@@ -913,6 +922,8 @@ const NodeHTTPServerSocket = class Socket extends Duplex {
   }
   #onClose() {
     this[kHandle] = null;
+    const server = this.server;
+    if (server) server._connections--;
 
     // Node.js's `socketOnClose` → `abortIncoming()` only destroys requests
     // that are still in `state.incoming` — i.e. requests whose response has
