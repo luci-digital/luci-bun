@@ -242,14 +242,19 @@ impl Watcher {
     // Per PORTING.md, `pub fn deinit` is never the public name; renamed to
     // `shutdown` (not `close(self)` because ownership may transfer to the
     // watcher thread instead of dropping here).
-    // TODO: ownership model — needs heap::take or an Arc to make this sound.
     /// # Safety
     /// `this` must be the unique heap pointer returned from `init()`; ownership
     /// transfers here on the no-thread path (the Box is reclaimed).
     pub unsafe fn shutdown(this: *mut Self, close_descriptors: bool) {
         // SAFETY: caller passes the unique heap pointer returned from init()
         let me = unsafe { &mut *this };
-        if me.watchloop_handle.load() {
+        // Ownership is decided by whether a thread was spawned, NOT by whether
+        // the thread has reached `watchloop_handle.store(true)` yet. Once
+        // `start()` spawns the thread, `thread_main()` always reaches
+        // `heap::take(this)` and frees the allocation; freeing here in the
+        // window between spawn and the thread's first store is a UAF (the
+        // thread then writes `watchloop_handle` to freed memory).
+        if me.thread.is_some() {
             me.mutex.lock();
             me.close_descriptors.store(close_descriptors);
             me.running.store(false);
