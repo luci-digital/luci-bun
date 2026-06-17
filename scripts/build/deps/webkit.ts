@@ -7,7 +7,13 @@
 // -lto variants built with ThinLTO (per-module summaries for cross-language
 // importing), and the Windows ICU data table filtered + per-item zstd
 // compressed (lazily decompressed via bun_icu_decompress.cpp).
-export const WEBKIT_VERSION = "cd821fecca0d39c8bac874c283d956868c7f0de0";
+// TEMPORARY preview pin: main's WebKit cd821fec + the asyncModuleExecutionResume
+// fix from oven-sh/WebKit#252 (fixes oven-sh/bun#32178), rebased onto cd821fec as
+// commit 83144fc3 so it is ABI-compatible with main's bindings.
+// Swap to the oven-sh/WebKit main autobuild SHA that includes #252 (the new commit
+// created when #252 lands, NOT cd821fec which is its unfixed base), before merging.
+// (main pin superseded by this preview: "cd821fecca0d39c8bac874c283d956868c7f0de0")
+export const WEBKIT_VERSION = "autobuild-preview-pr-252-83144fc3";
 
 /**
  * WebKit (JavaScriptCore) — the JS engine.
