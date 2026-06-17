@@ -111,6 +111,14 @@ const fuzzerInputs: [name: string, blob: string][] = [
     "min()-led atan2 chain with extra leading sum term",
     "H4sIAAAAAAACA8soztEozsyDY13LUUAG4NLm0jW0MDExMzcxMTA3NjewNDU1NDM0paU4KZoTSxLzjDSAYrRVDhcDA61cYIKy5NIysNQxN4VRmkD1w9E4AoZSy3GDxxx6GUSMBdRw5KgZo2aQawZt880gKgw0yYMAuYa6bWYIAAA=",
   ],
+  [
+    // 1,668-byte variant: 21-level chain with one doubly-nested `min()` (a
+    // `775 * min(...)` product as the last argument of an enclosing `min()`)
+    // and two surplus closing parentheses. Hung in Calc<Length>::parse_product
+    // before the fix.
+    "min()-led atan2 chain with a nested min() product",
+    "H4sIAAAAAAAAA8soztEozsyDY10jQxNzEwtjMxNLLm0uXUMLExMzcxMTA3NjcwNLU1NDM0PTARRPLEnMM9IAitFWOVwMDLRygeFiyaVlYKljbgqjNIelOaMG0degoeTWwW7QYHILPQ0aRMWKJnkQAD8DPxaEBgAA",
+  ],
 ];
 
 test.concurrent.each(fuzzerInputs)(
