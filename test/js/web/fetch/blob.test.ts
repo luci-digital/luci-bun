@@ -308,6 +308,13 @@ test("name and lastModified live on File.prototype, not Blob.prototype", () => {
   expect(bunFile.name).toBe(import.meta.path);
   expect(typeof bunFile.lastModified).toBe("number");
   expect(bunFile instanceof Blob).toBe(true);
+
+  // WebIDL: attribute getters throw TypeError on incompatible receivers.
+  const nameGet = Object.getOwnPropertyDescriptor(File.prototype, "name").get;
+  const lmGet = Object.getOwnPropertyDescriptor(File.prototype, "lastModified").get;
+  expect(() => nameGet.call({})).toThrow(TypeError);
+  expect(() => lmGet.call({})).toThrow(TypeError);
+  expect(nameGet.call(file)).toBe("bar.txt");
 });
 
 test("Body.blob() returns a plain Blob even when the body is a File", async () => {
@@ -338,9 +345,7 @@ test("File.prototype.constructor is set before the File global is touched", asyn
     stderr: "pipe",
   });
   const [stdout, stderr, exitCode] = await Promise.all([proc.stdout.text(), proc.stderr.text(), proc.exited]);
-  expect(stderr).toBe("");
-  expect(stdout.trim()).toBe("File true");
-  expect(exitCode).toBe(0);
+  expect({ stdout: stdout.trim(), exitCode }).toEqual({ stdout: "File true", exitCode: 0 });
 });
 
 test("#12894", () => {

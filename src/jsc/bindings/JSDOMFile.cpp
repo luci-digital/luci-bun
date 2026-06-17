@@ -66,8 +66,8 @@ JSC_DEFINE_CUSTOM_GETTER(domFilePrototype_lastModifiedGetter, (JSGlobalObject * 
 }
 
 static const HashTableValue JSDOMFilePrototypeTableValues[] = {
-    { "name"_s, static_cast<unsigned>(PropertyAttribute::CustomAccessor | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, domFilePrototype_nameGetter, domFilePrototype_nameSetter } },
-    { "lastModified"_s, static_cast<unsigned>(PropertyAttribute::ReadOnly | PropertyAttribute::CustomAccessor | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, domFilePrototype_lastModifiedGetter, 0 } },
+    { "name"_s, static_cast<unsigned>(PropertyAttribute::CustomAccessor | PropertyAttribute::DOMAttribute | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, domFilePrototype_nameGetter, domFilePrototype_nameSetter } },
+    { "lastModified"_s, static_cast<unsigned>(PropertyAttribute::ReadOnly | PropertyAttribute::CustomAccessor | PropertyAttribute::DOMAttribute | PropertyAttribute::DontDelete), NoIntrinsic, { HashTableValue::GetterSetterType, domFilePrototype_lastModifiedGetter, 0 } },
 };
 
 class JSDOMFilePrototype final : public JSC::JSNonFinalObject {
