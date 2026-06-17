@@ -1673,7 +1673,11 @@ impl Listener {
         jsc::ArrayBuffer::create_buffer(global, &buf)
     }
 
-    pub fn set_ticket_keys(this: &Self, global: &JSGlobalObject, keys: JSValue) -> JsResult<JSValue> {
+    pub fn set_ticket_keys(
+        this: &Self,
+        global: &JSGlobalObject,
+        keys: JSValue,
+    ) -> JsResult<JSValue> {
         if !this.ssl {
             return Err(global.throw_invalid_arguments(format_args!("setTicketKeys requires TLS")));
         }
@@ -1682,7 +1686,7 @@ impl Listener {
         };
         let Some(buffer) = keys.as_array_buffer(global) else {
             return Err(
-                global.throw_invalid_arguments(format_args!("keys must be a Buffer or TypedArray")),
+                global.throw_invalid_arguments(format_args!("keys must be a Buffer or TypedArray"))
             );
         };
         let slice = buffer.byte_slice();
