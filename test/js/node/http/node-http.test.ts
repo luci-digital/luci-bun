@@ -1628,6 +1628,132 @@ describe("HTTP Server Security Tests - Advanced", () => {
       await promise;
       expect(mockHandler).not.toHaveBeenCalled();
     });
+
+    test("duplicate request headers follow Node.js precedence rules", async () => {
+      // Expected values verified against Node.js v24: singleton headers keep
+      // the first value, joinable headers are comma-joined, Cookie joins with
+      // "; ", and Set-Cookie becomes an array.
+      const { promise, resolve, reject } = Promise.withResolvers();
+      server.on("request", (req, res) => {
+        try {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("ok");
+          resolve({
+            host: req.headers.host,
+            contentType: req.headers["content-type"],
+            authorization: req.headers.authorization,
+            accept: req.headers.accept,
+            xCustom: req.headers["x-custom"],
+            cookie: req.headers.cookie,
+            setCookie: req.headers["set-cookie"],
+            rawHostCount: req.rawHeaders.filter(h => h.toLowerCase() === "host").length,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      const msg = [
+        "GET / HTTP/1.1",
+        "Host: first.example.com",
+        "Host: second.example.com",
+        "Content-Type: text/plain",
+        "Content-Type: text/html",
+        "Authorization: token1",
+        "Authorization: token2",
+        "Accept: application/json",
+        "Accept: text/html",
+        "X-Custom: one",
+        "X-Custom: two",
+        "Cookie: a=1",
+        "Cookie: b=2",
+        "Set-Cookie: x=1",
+        "Set-Cookie: y=2",
+        "Connection: close",
+        "",
+        "",
+      ].join("\r\n");
+
+      const response = await sendRequest(msg);
+      expect(response).toInclude("200");
+      const headers: any = await promise;
+      // Singleton headers keep the first value.
+      expect(headers.host).toBe("first.example.com");
+      expect(headers.contentType).toBe("text/plain");
+      expect(headers.authorization).toBe("token1");
+      // Other headers are joined with ", ".
+      expect(headers.accept).toBe("application/json, text/html");
+      expect(headers.xCustom).toBe("one, two");
+      // Cookie is joined with "; ".
+      expect(headers.cookie).toBe("a=1; b=2");
+      // Set-Cookie is collected into an array.
+      expect(headers.setCookie).toEqual(["x=1", "y=2"]);
+      // rawHeaders still reports every received header.
+      expect(headers.rawHostCount).toBe(2);
+    });
+
+    test("duplicate request header edge cases follow Node.js precedence rules", async () => {
+      // Expected values verified against Node.js v24.
+      const { promise, resolve, reject } = Promise.withResolvers();
+      server.on("request", (req, res) => {
+        try {
+          res.writeHead(200, { "Content-Type": "text/plain" });
+          res.end("ok");
+          resolve({
+            xTriple: req.headers["x-triple"],
+            xMixed: req.headers["x-mixed"],
+            xEmpty: req.headers["x-empty"],
+            server: req.headers.server,
+            retryAfter: req.headers["retry-after"],
+            numeric: req.headers["123"],
+            rawHeaderCount: req.rawHeaders.length,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      const msg = [
+        "GET / HTTP/1.1",
+        "Host: localhost",
+        "X-Triple: one",
+        "X-Triple: two",
+        "X-Triple: three",
+        "x-MIXED: a",
+        "X-Mixed: b",
+        "X-Empty:",
+        "X-Empty: b",
+        "Server: apache",
+        "Server: nginx",
+        "Retry-After: 10",
+        "Retry-After: 20",
+        "123: a",
+        "123: b",
+        "Connection: close",
+        "",
+        "",
+      ].join("\r\n");
+
+      const response = await sendRequest(msg);
+      expect(response).toInclude("200");
+      const headers: any = await promise;
+      expect(headers).toEqual({
+        // Three or more occurrences are all joined, in order.
+        xTriple: "one, two, three",
+        // Names that differ only by case are the same header.
+        xMixed: "a, b",
+        // An empty first value still participates in the join.
+        xEmpty: ", b",
+        // Singleton headers keep the first value, including the ones WebCore
+        // has no HTTPHeaderName for (server, retry-after).
+        server: "apache",
+        retryAfter: "10",
+        // A header whose name parses as an array index joins like any other.
+        numeric: "a, b",
+        // rawHeaders still reports every received header (15 names + values).
+        rawHeaderCount: 30,
+      });
+    });
   });
 
   describe("HTTP Protocol Violations", () => {
@@ -2125,4 +2251,210 @@ it("http.request rejects an options.port that is not a valid port number", async
   } finally {
     server.close();
   }
+});
+
+// Node.js v26 removed res.writeHeader (DEP0063 end-of-life, nodejs/node#60635).
+it("ServerResponse.prototype.writeHeader was removed (DEP0063 EOL)", () => {
+  expect("writeHeader" in ServerResponse.prototype).toBe(false);
+});
+
+it("setHeaders stores an empty set-cookie array (nodejs/node#59734)", () => {
+  const msg = new OutgoingMessage();
+  msg.setHeaders(new Map([["set-cookie", []]]));
+  expect(msg.getHeader("set-cookie")).toEqual([]);
+  expect(msg.hasHeader("set-cookie")).toBe(true);
+  expect(msg.getHeaders()["set-cookie"]).toEqual([]);
+  expect(msg.getHeaderNames()).toContain("set-cookie");
+  expect(msg.getRawHeaderNames()).toContain("set-cookie");
+  msg.removeHeader("set-cookie");
+  expect(msg.getHeader("set-cookie")).toBeUndefined();
+  expect(msg.hasHeader("set-cookie")).toBe(false);
+
+  // Headers without a set-cookie entry never call setHeader("set-cookie", ...)
+  const msg2 = new OutgoingMessage();
+  msg2.setHeaders(new Map([["x-test", "1"]]));
+  expect(msg2.getHeader("set-cookie")).toBeUndefined();
+  expect(msg2.getHeader("x-test")).toBe("1");
+
+  // getRawHeaderNames preserves the original casing, like Node.
+  const msg3 = new OutgoingMessage();
+  msg3.setHeader("Set-Cookie", []);
+  expect(msg3.getRawHeaderNames()).toEqual(["Set-Cookie"]);
+  expect(msg3.getHeaderNames()).toEqual(["set-cookie"]);
+  // The Bun-specific headers accessor agrees with getHeaders().
+  expect(msg3.headers).toEqual({ "set-cookie": [] });
+
+  // Appending a cookie supersedes the present-but-empty marker (no duplicate
+  // name in getRawHeaderNames, value visible everywhere).
+  msg3.appendHeader("Set-Cookie", "a=1");
+  expect(msg3.getHeader("set-cookie")).toEqual(["a=1"]);
+  expect(msg3.getRawHeaderNames().filter(n => n.toLowerCase() === "set-cookie")).toHaveLength(1);
+  expect(msg3.getHeaders()["set-cookie"]).toEqual(["a=1"]);
+
+  // Replacing the whole header bag drops the marker.
+  const msg4 = new OutgoingMessage();
+  msg4.setHeader("set-cookie", []);
+  (msg4 as any).headers = { "x-test": "1" };
+  expect(msg4.getHeader("set-cookie")).toBeUndefined();
+  expect(msg4.hasHeader("set-cookie")).toBe(false);
+  expect(msg4.getHeaderNames()).toEqual(["x-test"]);
+});
+
+it("https.Agent applies defaultPort/protocol through options (nodejs/node#58980)", () => {
+  const a = new https.Agent();
+  try {
+    expect(a.defaultPort).toBe(443);
+    expect(a.protocol).toBe("https:");
+    // v26 sets the defaults on the (null-prototype) options object before
+    // calling the base constructor.
+    expect(a.options.defaultPort).toBe(443);
+    expect(a.options.protocol).toBe("https:");
+    expect(Object.getPrototypeOf(a.options)).toBe(null);
+  } finally {
+    a.destroy();
+  }
+
+  const b = new https.Agent({ defaultPort: 8443 });
+  try {
+    expect(b.defaultPort).toBe(8443);
+    expect(b.protocol).toBe("https:");
+  } finally {
+    b.destroy();
+  }
+});
+
+it("upgrade request with no 'upgrade' listener falls through to 'request'", async () => {
+  // Mirrors Node.js behavior (see Node's _http_server.js shouldUpgradeCallback
+  // default): when the server has no 'upgrade' listener, an Upgrade request is
+  // handled as a regular request instead of disappearing.
+  const server = createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("regular response");
+  });
+  try {
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const { port } = server.address() as AddressInfo;
+
+    const result = await new Promise<string>((resolve, reject) => {
+      const socket = connect(port, "127.0.0.1", () => {
+        socket.write("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n");
+      });
+      let data = "";
+      socket.setEncoding("utf8");
+      socket.on("data", chunk => {
+        data += chunk;
+        if (data.includes("regular response")) {
+          socket.destroy();
+          resolve(data);
+        }
+      });
+      socket.on("error", reject);
+      socket.on("close", () => resolve(data));
+    });
+
+    expect(result).toContain("HTTP/1.1 200");
+    expect(result).toContain("regular response");
+  } finally {
+    server.close();
+  }
+});
+
+it("ServerResponse does not emit 'drain' after a successful (non-backpressured) write", async () => {
+  // Node.js only emits 'drain' after a write() that returned false.
+  let drains = 0;
+  let writeReturned: boolean | undefined;
+  const server = createServer((req, res) => {
+    res.on("drain", () => drains++);
+    writeReturned = res.write("hello");
+    // Give a synchronously-emitted 'drain' a chance to fire before ending.
+    process.nextTick(() => {
+      res.end(" world");
+    });
+  });
+  try {
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const { port } = server.address() as AddressInfo;
+
+    const body = await new Promise<string>((resolve, reject) => {
+      const req = http.request({ host: "127.0.0.1", port }, res => {
+        let data = "";
+        res.setEncoding("utf8");
+        res.on("data", chunk => (data += chunk));
+        res.on("end", () => resolve(data));
+      });
+      req.on("error", reject);
+      req.end();
+    });
+
+    expect(body).toBe("hello world");
+    expect(writeReturned).toBe(true);
+    expect(drains).toBe(0);
+  } finally {
+    server.close();
+  }
+});
+
+it("https.Agent.prototype.createConnection creates a TLS connection", async () => {
+  expect(typeof https.Agent.prototype.createConnection).toBe("function");
+
+  const server = createHttpsServer({ key: tlsCert.key, cert: tlsCert.cert }, (req, res) => {
+    res.end("secure");
+  });
+  try {
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const { port } = server.address() as AddressInfo;
+
+    const socket: any = https.globalAgent.createConnection({
+      host: "127.0.0.1",
+      port,
+      rejectUnauthorized: false,
+    });
+    try {
+      await once(socket, "secureConnect");
+      // It's a TLS socket, not a plain net.Socket.
+      expect(socket.encrypted).toBe(true);
+    } finally {
+      socket.destroy();
+    }
+  } finally {
+    server.close();
+  }
+});
+
+it("http.Agent with proxyEnv does not write to a literal 'undefined' property", () => {
+  // Regression: the kProxyConfig symbol destructured from internal/http was
+  // undefined, so the proxy config was stored as agent["undefined"].
+  const agent = new Agent({ proxyEnv: { http_proxy: "http://localhost:4873" } } as any);
+  try {
+    expect(Object.hasOwn(agent, "undefined")).toBe(false);
+  } finally {
+    agent.destroy();
+  }
+});
+
+it("OutgoingMessage outputData is per-instance and _flushOutput is defined", () => {
+  expect(typeof OutgoingMessage.prototype._flushOutput).toBe("function");
+
+  const a = new OutgoingMessage();
+  const b = new OutgoingMessage();
+  expect(a.outputData).not.toBe(b.outputData);
+
+  // Buffered writes on one message must not leak into other instances
+  // (outputData used to be a shared array on the prototype).
+  a.outputData.push({ data: "x", encoding: "utf8", callback: null });
+  expect(a.outputData.length).toBe(1);
+  expect(b.outputData.length).toBe(0);
+  expect(new OutgoingMessage().outputData.length).toBe(0);
+
+  // Like Node, the prototype has no outputData property at all; reading it off
+  // the prototype must not materialize shared state on the prototype.
+  expect(Object.getOwnPropertyDescriptor(OutgoingMessage.prototype, "outputData")).toBeUndefined();
+  void (OutgoingMessage.prototype as any).outputData;
+  const c = new OutgoingMessage();
+  const d = new OutgoingMessage();
+  c.outputData.push({ data: "y", encoding: "utf8", callback: null });
+  expect(d.outputData.length).toBe(0);
 });

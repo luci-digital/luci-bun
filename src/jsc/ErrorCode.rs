@@ -1,7 +1,6 @@
 //! Node-compat error codes — generated from `src/jsc/bindings/ErrorCode.ts`.
 //!
-//! Mirrors `build/*/codegen/ErrorCode.zig` (`pub const Error = enum(u16)`) and
-//! C++ `Bun::ErrorCode` in `ErrorCode+List.h`. Discriminants MUST stay
+//! Mirrors C++ `Bun::ErrorCode` in `ErrorCode+List.h`. Discriminants MUST stay
 //! index-aligned with the C++ `errors[]` table so `Bun__createErrorWithCode`
 //! picks the correct ctor / name / code triple.
 //!
@@ -45,10 +44,9 @@ impl GlobalObjectRef for crate::JSGlobalObject {
 
 type ErrorCodeInt = u16;
 
-/// `@import("ErrorCode").Error` — `enum(u16)` in Zig codegen, `Bun::ErrorCode`
-/// in C++. Modelled as a newtype-over-`u16` so the same type can also carry
-/// the legacy `anyerror`-derived sentinels (`PARSER_ERROR` / `JS_ERROR_OBJECT`)
-/// from `src/jsc/ErrorCode.zig` without an exhaustive-match obligation.
+/// `Bun::ErrorCode` in C++. Modelled as a newtype-over-`u16` so the same type
+/// can also carry the legacy sentinels (`PARSER_ERROR` / `JS_ERROR_OBJECT`)
+/// without an exhaustive-match obligation.
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct ErrorCode(pub ErrorCodeInt);
@@ -551,144 +549,162 @@ impl ErrorCode {
     pub const TLS_PSK_SET_IDENTITY_HINT_FAILED: ErrorCode = ErrorCode(245);
     /// `ERR_TLS_RENEGOTIATION_DISABLED` (instanceof Error)
     pub const TLS_RENEGOTIATION_DISABLED: ErrorCode = ErrorCode(246);
+    /// `ERR_TLS_RENEGOTIATION_UNSUPPORTED` (instanceof Error)
+    pub const TLS_RENEGOTIATION_UNSUPPORTED: ErrorCode = ErrorCode(247);
     /// `ERR_TLS_SNI_FROM_SERVER` (instanceof Error)
-    pub const TLS_SNI_FROM_SERVER: ErrorCode = ErrorCode(247);
+    pub const TLS_SNI_FROM_SERVER: ErrorCode = ErrorCode(248);
+    /// `ERR_TLS_INVALID_STATE` (instanceof Error)
+    pub const TLS_INVALID_STATE: ErrorCode = ErrorCode(249);
     /// `ERR_TLS_ALPN_CALLBACK_WITH_PROTOCOLS` (instanceof TypeError)
-    pub const TLS_ALPN_CALLBACK_WITH_PROTOCOLS: ErrorCode = ErrorCode(248);
+    pub const TLS_ALPN_CALLBACK_WITH_PROTOCOLS: ErrorCode = ErrorCode(250);
     /// `ERR_SSL_NO_CIPHER_MATCH` (instanceof Error)
-    pub const SSL_NO_CIPHER_MATCH: ErrorCode = ErrorCode(249);
+    pub const SSL_NO_CIPHER_MATCH: ErrorCode = ErrorCode(251);
     /// `ERR_UNAVAILABLE_DURING_EXIT` (instanceof Error)
-    pub const UNAVAILABLE_DURING_EXIT: ErrorCode = ErrorCode(250);
+    pub const UNAVAILABLE_DURING_EXIT: ErrorCode = ErrorCode(252);
     /// `ERR_UNCAUGHT_EXCEPTION_CAPTURE_ALREADY_SET` (instanceof Error)
-    pub const UNCAUGHT_EXCEPTION_CAPTURE_ALREADY_SET: ErrorCode = ErrorCode(251);
+    pub const UNCAUGHT_EXCEPTION_CAPTURE_ALREADY_SET: ErrorCode = ErrorCode(253);
     /// `ERR_UNESCAPED_CHARACTERS` (instanceof TypeError)
-    pub const UNESCAPED_CHARACTERS: ErrorCode = ErrorCode(252);
+    pub const UNESCAPED_CHARACTERS: ErrorCode = ErrorCode(254);
     /// `ERR_UNHANDLED_ERROR` (instanceof Error)
-    pub const UNHANDLED_ERROR: ErrorCode = ErrorCode(253);
+    pub const UNHANDLED_ERROR: ErrorCode = ErrorCode(255);
     /// `ERR_UNKNOWN_CREDENTIAL` (instanceof Error)
-    pub const UNKNOWN_CREDENTIAL: ErrorCode = ErrorCode(254);
+    pub const UNKNOWN_CREDENTIAL: ErrorCode = ErrorCode(256);
     /// `ERR_UNKNOWN_ENCODING` (instanceof TypeError)
-    pub const UNKNOWN_ENCODING: ErrorCode = ErrorCode(255);
+    pub const UNKNOWN_ENCODING: ErrorCode = ErrorCode(257);
     /// `ERR_UNKNOWN_SIGNAL` (instanceof TypeError)
-    pub const UNKNOWN_SIGNAL: ErrorCode = ErrorCode(256);
+    pub const UNKNOWN_SIGNAL: ErrorCode = ErrorCode(258);
     /// `ERR_ZSTD_INVALID_PARAM` (instanceof RangeError)
-    pub const ZSTD_INVALID_PARAM: ErrorCode = ErrorCode(257);
+    pub const ZSTD_INVALID_PARAM: ErrorCode = ErrorCode(259);
     /// `ERR_USE_AFTER_CLOSE` (instanceof Error)
-    pub const USE_AFTER_CLOSE: ErrorCode = ErrorCode(258);
+    pub const USE_AFTER_CLOSE: ErrorCode = ErrorCode(260);
     /// `ERR_WASI_NOT_STARTED` (instanceof Error)
-    pub const WASI_NOT_STARTED: ErrorCode = ErrorCode(259);
+    pub const WASI_NOT_STARTED: ErrorCode = ErrorCode(261);
     /// `ERR_WEBASSEMBLY_RESPONSE` (instanceof TypeError)
-    pub const WEBASSEMBLY_RESPONSE: ErrorCode = ErrorCode(260);
+    pub const WEBASSEMBLY_RESPONSE: ErrorCode = ErrorCode(262);
     /// `ERR_WORKER_INIT_FAILED` (instanceof Error)
-    pub const WORKER_INIT_FAILED: ErrorCode = ErrorCode(261);
+    pub const WORKER_INIT_FAILED: ErrorCode = ErrorCode(263);
     /// `ERR_WORKER_NOT_RUNNING` (instanceof Error)
-    pub const WORKER_NOT_RUNNING: ErrorCode = ErrorCode(262);
+    pub const WORKER_NOT_RUNNING: ErrorCode = ErrorCode(264);
     /// `ERR_WORKER_UNSUPPORTED_OPERATION` (instanceof TypeError)
-    pub const WORKER_UNSUPPORTED_OPERATION: ErrorCode = ErrorCode(263);
+    pub const WORKER_UNSUPPORTED_OPERATION: ErrorCode = ErrorCode(265);
     /// `ERR_ZLIB_INITIALIZATION_FAILED` (instanceof Error)
-    pub const ZLIB_INITIALIZATION_FAILED: ErrorCode = ErrorCode(264);
+    pub const ZLIB_INITIALIZATION_FAILED: ErrorCode = ErrorCode(266);
     /// `MODULE_NOT_FOUND` (instanceof Error)
-    pub const MODULE_NOT_FOUND: ErrorCode = ErrorCode(265);
+    pub const MODULE_NOT_FOUND: ErrorCode = ErrorCode(267);
     /// `ERR_INTERNAL_ASSERTION` (instanceof Error)
-    pub const INTERNAL_ASSERTION: ErrorCode = ErrorCode(266);
+    pub const INTERNAL_ASSERTION: ErrorCode = ErrorCode(268);
     /// `ERR_OSSL_EVP_INVALID_DIGEST` (instanceof Error)
-    pub const OSSL_EVP_INVALID_DIGEST: ErrorCode = ErrorCode(267);
+    pub const OSSL_EVP_INVALID_DIGEST: ErrorCode = ErrorCode(269);
     /// `ERR_KEY_GENERATION_JOB_FAILED` (instanceof Error)
-    pub const KEY_GENERATION_JOB_FAILED: ErrorCode = ErrorCode(268);
+    pub const KEY_GENERATION_JOB_FAILED: ErrorCode = ErrorCode(270);
     /// `ERR_MISSING_OPTION` (instanceof TypeError)
-    pub const MISSING_OPTION: ErrorCode = ErrorCode(269);
+    pub const MISSING_OPTION: ErrorCode = ErrorCode(271);
     /// `ERR_REDIS_AUTHENTICATION_FAILED` (instanceof Error)
-    pub const REDIS_AUTHENTICATION_FAILED: ErrorCode = ErrorCode(270);
+    pub const REDIS_AUTHENTICATION_FAILED: ErrorCode = ErrorCode(272);
     /// `ERR_REDIS_CONNECTION_CLOSED` (instanceof Error)
-    pub const REDIS_CONNECTION_CLOSED: ErrorCode = ErrorCode(271);
+    pub const REDIS_CONNECTION_CLOSED: ErrorCode = ErrorCode(273);
     /// `ERR_REDIS_CONNECTION_TIMEOUT` (instanceof Error)
-    pub const REDIS_CONNECTION_TIMEOUT: ErrorCode = ErrorCode(272);
+    pub const REDIS_CONNECTION_TIMEOUT: ErrorCode = ErrorCode(274);
     /// `ERR_REDIS_IDLE_TIMEOUT` (instanceof Error)
-    pub const REDIS_IDLE_TIMEOUT: ErrorCode = ErrorCode(273);
+    pub const REDIS_IDLE_TIMEOUT: ErrorCode = ErrorCode(275);
     /// `ERR_REDIS_INVALID_ARGUMENT` (instanceof Error)
-    pub const REDIS_INVALID_ARGUMENT: ErrorCode = ErrorCode(274);
+    pub const REDIS_INVALID_ARGUMENT: ErrorCode = ErrorCode(276);
     /// `ERR_REDIS_INVALID_ARRAY` (instanceof Error)
-    pub const REDIS_INVALID_ARRAY: ErrorCode = ErrorCode(275);
+    pub const REDIS_INVALID_ARRAY: ErrorCode = ErrorCode(277);
     /// `ERR_REDIS_INVALID_BULK_STRING` (instanceof Error)
-    pub const REDIS_INVALID_BULK_STRING: ErrorCode = ErrorCode(276);
+    pub const REDIS_INVALID_BULK_STRING: ErrorCode = ErrorCode(278);
     /// `ERR_REDIS_INVALID_COMMAND` (instanceof Error)
-    pub const REDIS_INVALID_COMMAND: ErrorCode = ErrorCode(277);
+    pub const REDIS_INVALID_COMMAND: ErrorCode = ErrorCode(279);
     /// `ERR_REDIS_INVALID_DATABASE` (instanceof Error)
-    pub const REDIS_INVALID_DATABASE: ErrorCode = ErrorCode(278);
+    pub const REDIS_INVALID_DATABASE: ErrorCode = ErrorCode(280);
     /// `ERR_REDIS_INVALID_ERROR_STRING` (instanceof Error)
-    pub const REDIS_INVALID_ERROR_STRING: ErrorCode = ErrorCode(279);
+    pub const REDIS_INVALID_ERROR_STRING: ErrorCode = ErrorCode(281);
     /// `ERR_REDIS_INVALID_INTEGER` (instanceof Error)
-    pub const REDIS_INVALID_INTEGER: ErrorCode = ErrorCode(280);
+    pub const REDIS_INVALID_INTEGER: ErrorCode = ErrorCode(282);
     /// `ERR_REDIS_INVALID_PASSWORD` (instanceof Error)
-    pub const REDIS_INVALID_PASSWORD: ErrorCode = ErrorCode(281);
+    pub const REDIS_INVALID_PASSWORD: ErrorCode = ErrorCode(283);
     /// `ERR_REDIS_INVALID_RESPONSE` (instanceof Error)
-    pub const REDIS_INVALID_RESPONSE: ErrorCode = ErrorCode(282);
+    pub const REDIS_INVALID_RESPONSE: ErrorCode = ErrorCode(284);
     /// `ERR_REDIS_INVALID_RESPONSE_TYPE` (instanceof Error)
-    pub const REDIS_INVALID_RESPONSE_TYPE: ErrorCode = ErrorCode(283);
+    pub const REDIS_INVALID_RESPONSE_TYPE: ErrorCode = ErrorCode(285);
     /// `ERR_REDIS_INVALID_SIMPLE_STRING` (instanceof Error)
-    pub const REDIS_INVALID_SIMPLE_STRING: ErrorCode = ErrorCode(284);
+    pub const REDIS_INVALID_SIMPLE_STRING: ErrorCode = ErrorCode(286);
     /// `ERR_REDIS_INVALID_STATE` (instanceof Error)
-    pub const REDIS_INVALID_STATE: ErrorCode = ErrorCode(285);
+    pub const REDIS_INVALID_STATE: ErrorCode = ErrorCode(287);
     /// `ERR_REDIS_INVALID_USERNAME` (instanceof Error)
-    pub const REDIS_INVALID_USERNAME: ErrorCode = ErrorCode(286);
+    pub const REDIS_INVALID_USERNAME: ErrorCode = ErrorCode(288);
     /// `ERR_REDIS_TLS_NOT_AVAILABLE` (instanceof Error)
-    pub const REDIS_TLS_NOT_AVAILABLE: ErrorCode = ErrorCode(287);
+    pub const REDIS_TLS_NOT_AVAILABLE: ErrorCode = ErrorCode(289);
     /// `ERR_REDIS_TLS_UPGRADE_FAILED` (instanceof Error)
-    pub const REDIS_TLS_UPGRADE_FAILED: ErrorCode = ErrorCode(288);
+    pub const REDIS_TLS_UPGRADE_FAILED: ErrorCode = ErrorCode(290);
     /// `HPE_UNEXPECTED_CONTENT_LENGTH` (instanceof Error)
-    pub const HPE_UNEXPECTED_CONTENT_LENGTH: ErrorCode = ErrorCode(289);
+    pub const HPE_UNEXPECTED_CONTENT_LENGTH: ErrorCode = ErrorCode(291);
     /// `HPE_INVALID_TRANSFER_ENCODING` (instanceof Error)
-    pub const HPE_INVALID_TRANSFER_ENCODING: ErrorCode = ErrorCode(290);
+    pub const HPE_INVALID_TRANSFER_ENCODING: ErrorCode = ErrorCode(292);
     /// `HPE_INVALID_EOF_STATE` (instanceof Error)
-    pub const HPE_INVALID_EOF_STATE: ErrorCode = ErrorCode(291);
+    pub const HPE_INVALID_EOF_STATE: ErrorCode = ErrorCode(293);
     /// `HPE_INVALID_METHOD` (instanceof Error)
-    pub const HPE_INVALID_METHOD: ErrorCode = ErrorCode(292);
+    pub const HPE_INVALID_METHOD: ErrorCode = ErrorCode(294);
     /// `HPE_INTERNAL` (instanceof Error)
-    pub const HPE_INTERNAL: ErrorCode = ErrorCode(293);
+    pub const HPE_INTERNAL: ErrorCode = ErrorCode(295);
     /// `ERR_VM_MODULE_STATUS` (instanceof Error)
-    pub const VM_MODULE_STATUS: ErrorCode = ErrorCode(294);
+    pub const VM_MODULE_STATUS: ErrorCode = ErrorCode(296);
     /// `ERR_VM_MODULE_ALREADY_LINKED` (instanceof Error)
-    pub const VM_MODULE_ALREADY_LINKED: ErrorCode = ErrorCode(295);
+    pub const VM_MODULE_ALREADY_LINKED: ErrorCode = ErrorCode(297);
     /// `ERR_VM_MODULE_CANNOT_CREATE_CACHED_DATA` (instanceof Error)
-    pub const VM_MODULE_CANNOT_CREATE_CACHED_DATA: ErrorCode = ErrorCode(296);
+    pub const VM_MODULE_CANNOT_CREATE_CACHED_DATA: ErrorCode = ErrorCode(298);
     /// `ERR_VM_MODULE_NOT_MODULE` (instanceof Error)
-    pub const VM_MODULE_NOT_MODULE: ErrorCode = ErrorCode(297);
+    pub const VM_MODULE_NOT_MODULE: ErrorCode = ErrorCode(299);
     /// `ERR_VM_MODULE_DIFFERENT_CONTEXT` (instanceof Error)
-    pub const VM_MODULE_DIFFERENT_CONTEXT: ErrorCode = ErrorCode(298);
+    pub const VM_MODULE_DIFFERENT_CONTEXT: ErrorCode = ErrorCode(300);
     /// `ERR_VM_MODULE_LINK_FAILURE` (instanceof Error)
-    pub const VM_MODULE_LINK_FAILURE: ErrorCode = ErrorCode(299);
+    pub const VM_MODULE_LINK_FAILURE: ErrorCode = ErrorCode(301);
     /// `ERR_VM_MODULE_CACHED_DATA_REJECTED` (instanceof Error)
-    pub const VM_MODULE_CACHED_DATA_REJECTED: ErrorCode = ErrorCode(300);
+    pub const VM_MODULE_CACHED_DATA_REJECTED: ErrorCode = ErrorCode(302);
     /// `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING` (instanceof TypeError)
-    pub const VM_DYNAMIC_IMPORT_CALLBACK_MISSING: ErrorCode = ErrorCode(301);
+    pub const VM_DYNAMIC_IMPORT_CALLBACK_MISSING: ErrorCode = ErrorCode(303);
     /// `HPE_INVALID_HEADER_TOKEN` (instanceof Error)
-    pub const HPE_INVALID_HEADER_TOKEN: ErrorCode = ErrorCode(302);
+    pub const HPE_INVALID_HEADER_TOKEN: ErrorCode = ErrorCode(304);
     /// `HPE_HEADER_OVERFLOW` (instanceof Error)
-    pub const HPE_HEADER_OVERFLOW: ErrorCode = ErrorCode(303);
+    pub const HPE_HEADER_OVERFLOW: ErrorCode = ErrorCode(305);
     /// `ERR_SECRETS_NOT_AVAILABLE` (instanceof Error)
-    pub const SECRETS_NOT_AVAILABLE: ErrorCode = ErrorCode(304);
+    pub const SECRETS_NOT_AVAILABLE: ErrorCode = ErrorCode(306);
     /// `ERR_SECRETS_NOT_FOUND` (instanceof Error)
-    pub const SECRETS_NOT_FOUND: ErrorCode = ErrorCode(305);
+    pub const SECRETS_NOT_FOUND: ErrorCode = ErrorCode(307);
     /// `ERR_SECRETS_ACCESS_DENIED` (instanceof Error)
-    pub const SECRETS_ACCESS_DENIED: ErrorCode = ErrorCode(306);
+    pub const SECRETS_ACCESS_DENIED: ErrorCode = ErrorCode(308);
     /// `ERR_SECRETS_PLATFORM_ERROR` (instanceof Error)
-    pub const SECRETS_PLATFORM_ERROR: ErrorCode = ErrorCode(307);
+    pub const SECRETS_PLATFORM_ERROR: ErrorCode = ErrorCode(309);
     /// `ERR_SECRETS_USER_CANCELED` (instanceof Error)
-    pub const SECRETS_USER_CANCELED: ErrorCode = ErrorCode(308);
+    pub const SECRETS_USER_CANCELED: ErrorCode = ErrorCode(310);
     /// `ERR_SECRETS_INTERACTION_NOT_ALLOWED` (instanceof Error)
-    pub const SECRETS_INTERACTION_NOT_ALLOWED: ErrorCode = ErrorCode(309);
+    pub const SECRETS_INTERACTION_NOT_ALLOWED: ErrorCode = ErrorCode(311);
     /// `ERR_SECRETS_AUTH_FAILED` (instanceof Error)
-    pub const SECRETS_AUTH_FAILED: ErrorCode = ErrorCode(310);
+    pub const SECRETS_AUTH_FAILED: ErrorCode = ErrorCode(312);
     /// `ERR_SECRETS_INTERACTION_REQUIRED` (instanceof Error)
-    pub const SECRETS_INTERACTION_REQUIRED: ErrorCode = ErrorCode(311);
+    pub const SECRETS_INTERACTION_REQUIRED: ErrorCode = ErrorCode(313);
+    /// `ERR_POSTGRES_CONNECTION_FAILED` (instanceof Error)
+    pub const POSTGRES_CONNECTION_FAILED: ErrorCode = ErrorCode(314);
+    /// `ERR_MYSQL_CONNECTION_FAILED` (instanceof Error)
+    pub const MYSQL_CONNECTION_FAILED: ErrorCode = ErrorCode(315);
+    /// `ERR_POSTGRES_CONNECTION_REFUSED` (instanceof Error)
+    pub const POSTGRES_CONNECTION_REFUSED: ErrorCode = ErrorCode(316);
+    /// `ERR_MYSQL_CONNECTION_REFUSED` (instanceof Error)
+    pub const MYSQL_CONNECTION_REFUSED: ErrorCode = ErrorCode(317);
+
+    /// `ERR_HTTP2_GOAWAY_SESSION`
+    pub const HTTP2_GOAWAY_SESSION: ErrorCode = ErrorCode(318);
+
+    /// `ERR_TLS_ALPN_CALLBACK_INVALID_RESULT` (instanceof TypeError)
+    pub const TLS_ALPN_CALLBACK_INVALID_RESULT: ErrorCode = ErrorCode(319);
 
     /// == C++ `NODE_ERROR_COUNT`.
-    pub const COUNT: u16 = 312;
+    pub const COUNT: u16 = 320;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // `ERR_`-prefixed aliases — some callers spell the full Node code string,
-// some use the Zig-style stripped name. Both resolve to the same discriminant.
+// some use the stripped name. Both resolve to the same discriminant.
 // ──────────────────────────────────────────────────────────────────────────
 impl ErrorCode {
     pub const ERR_ACCESS_DENIED: ErrorCode = ErrorCode::ACCESS_DENIED;
@@ -870,6 +886,8 @@ impl ErrorCode {
     pub const ERR_POSTGRES_AUTHENTICATION_FAILED_PBKDF2: ErrorCode =
         ErrorCode::POSTGRES_AUTHENTICATION_FAILED_PBKDF2;
     pub const ERR_POSTGRES_CONNECTION_CLOSED: ErrorCode = ErrorCode::POSTGRES_CONNECTION_CLOSED;
+    pub const ERR_POSTGRES_CONNECTION_FAILED: ErrorCode = ErrorCode::POSTGRES_CONNECTION_FAILED;
+    pub const ERR_POSTGRES_CONNECTION_REFUSED: ErrorCode = ErrorCode::POSTGRES_CONNECTION_REFUSED;
     pub const ERR_POSTGRES_CONNECTION_TIMEOUT: ErrorCode = ErrorCode::POSTGRES_CONNECTION_TIMEOUT;
     pub const ERR_POSTGRES_EXPECTED_REQUEST: ErrorCode = ErrorCode::POSTGRES_EXPECTED_REQUEST;
     pub const ERR_POSTGRES_EXPECTED_STATEMENT: ErrorCode = ErrorCode::POSTGRES_EXPECTED_STATEMENT;
@@ -925,6 +943,8 @@ impl ErrorCode {
         ErrorCode::POSTGRES_UNSUPPORTED_NUMERIC_FORMAT;
     pub const ERR_PROXY_INVALID_CONFIG: ErrorCode = ErrorCode::PROXY_INVALID_CONFIG;
     pub const ERR_MYSQL_CONNECTION_CLOSED: ErrorCode = ErrorCode::MYSQL_CONNECTION_CLOSED;
+    pub const ERR_MYSQL_CONNECTION_FAILED: ErrorCode = ErrorCode::MYSQL_CONNECTION_FAILED;
+    pub const ERR_MYSQL_CONNECTION_REFUSED: ErrorCode = ErrorCode::MYSQL_CONNECTION_REFUSED;
     pub const ERR_MYSQL_CONNECTION_TIMEOUT: ErrorCode = ErrorCode::MYSQL_CONNECTION_TIMEOUT;
     pub const ERR_MYSQL_IDLE_TIMEOUT: ErrorCode = ErrorCode::MYSQL_IDLE_TIMEOUT;
     pub const ERR_MYSQL_LIFETIME_TIMEOUT: ErrorCode = ErrorCode::MYSQL_LIFETIME_TIMEOUT;
@@ -970,14 +990,19 @@ impl ErrorCode {
     pub const ERR_TLS_HANDSHAKE_TIMEOUT: ErrorCode = ErrorCode::TLS_HANDSHAKE_TIMEOUT;
     pub const ERR_TLS_INVALID_PROTOCOL_METHOD: ErrorCode = ErrorCode::TLS_INVALID_PROTOCOL_METHOD;
     pub const ERR_TLS_INVALID_PROTOCOL_VERSION: ErrorCode = ErrorCode::TLS_INVALID_PROTOCOL_VERSION;
+    pub const ERR_TLS_INVALID_STATE: ErrorCode = ErrorCode::TLS_INVALID_STATE;
     pub const ERR_TLS_PROTOCOL_VERSION_CONFLICT: ErrorCode =
         ErrorCode::TLS_PROTOCOL_VERSION_CONFLICT;
     pub const ERR_TLS_PSK_SET_IDENTITY_HINT_FAILED: ErrorCode =
         ErrorCode::TLS_PSK_SET_IDENTITY_HINT_FAILED;
     pub const ERR_TLS_RENEGOTIATION_DISABLED: ErrorCode = ErrorCode::TLS_RENEGOTIATION_DISABLED;
+    pub const ERR_TLS_RENEGOTIATION_UNSUPPORTED: ErrorCode =
+        ErrorCode::TLS_RENEGOTIATION_UNSUPPORTED;
     pub const ERR_TLS_SNI_FROM_SERVER: ErrorCode = ErrorCode::TLS_SNI_FROM_SERVER;
     pub const ERR_TLS_ALPN_CALLBACK_WITH_PROTOCOLS: ErrorCode =
         ErrorCode::TLS_ALPN_CALLBACK_WITH_PROTOCOLS;
+    pub const ERR_TLS_ALPN_CALLBACK_INVALID_RESULT: ErrorCode =
+        ErrorCode::TLS_ALPN_CALLBACK_INVALID_RESULT;
     pub const ERR_SSL_NO_CIPHER_MATCH: ErrorCode = ErrorCode::SSL_NO_CIPHER_MATCH;
     pub const ERR_UNAVAILABLE_DURING_EXIT: ErrorCode = ErrorCode::UNAVAILABLE_DURING_EXIT;
     pub const ERR_UNCAUGHT_EXCEPTION_CAPTURE_ALREADY_SET: ErrorCode =
@@ -1038,11 +1063,11 @@ impl ErrorCode {
         ErrorCode::SECRETS_INTERACTION_NOT_ALLOWED;
     pub const ERR_SECRETS_AUTH_FAILED: ErrorCode = ErrorCode::SECRETS_AUTH_FAILED;
     pub const ERR_SECRETS_INTERACTION_REQUIRED: ErrorCode = ErrorCode::SECRETS_INTERACTION_REQUIRED;
+    pub const ERR_HTTP2_GOAWAY_SESSION: ErrorCode = ErrorCode::HTTP2_GOAWAY_SESSION;
 
     // NOTE: `ERR_SYSTEM_ERROR` / `ERR_CHILD_CLOSED_BEFORE_REPLY` intentionally
-    // do NOT live here. They belong to the unrelated Zig enum
-    // `jsc.Node.ErrorCode` (src/runtime/node/nodejs_error_code.zig →
-    // `bun_runtime::node::nodejs_error_code::ErrorCode`), not to the
+    // do NOT live here. They belong to the unrelated enum
+    // `bun_runtime::node::nodejs_error_code::ErrorCode`, not to the
     // ErrorCode.ts-derived table this type mirrors. Adding them here with
     // out-of-range discriminants (≥ Self::COUNT) is a memory-safety bug: the
     // C++ side does `errors[static_cast<size_t>(code)]` against a fixed
@@ -1303,7 +1328,9 @@ static CODE_STR: [&str; ErrorCode::COUNT as usize] = [
     "ERR_TLS_PROTOCOL_VERSION_CONFLICT",
     "ERR_TLS_PSK_SET_IDENTITY_HINT_FAILED",
     "ERR_TLS_RENEGOTIATION_DISABLED",
+    "ERR_TLS_RENEGOTIATION_UNSUPPORTED",
     "ERR_TLS_SNI_FROM_SERVER",
+    "ERR_TLS_INVALID_STATE",
     "ERR_TLS_ALPN_CALLBACK_WITH_PROTOCOLS",
     "ERR_SSL_NO_CIPHER_MATCH",
     "ERR_UNAVAILABLE_DURING_EXIT",
@@ -1368,27 +1395,28 @@ static CODE_STR: [&str; ErrorCode::COUNT as usize] = [
     "ERR_SECRETS_INTERACTION_NOT_ALLOWED",
     "ERR_SECRETS_AUTH_FAILED",
     "ERR_SECRETS_INTERACTION_REQUIRED",
+    "ERR_POSTGRES_CONNECTION_FAILED",
+    "ERR_MYSQL_CONNECTION_FAILED",
+    "ERR_POSTGRES_CONNECTION_REFUSED",
+    "ERR_MYSQL_CONNECTION_REFUSED",
+    "ERR_HTTP2_GOAWAY_SESSION",
+    "ERR_TLS_ALPN_CALLBACK_INVALID_RESULT",
 ];
 
 // ──────────────────────────────────────────────────────────────────────────
-// Legacy anyerror-wrapper sentinels (src/jsc/ErrorCode.zig).
+// Legacy anyerror-wrapper sentinels.
 // ──────────────────────────────────────────────────────────────────────────
 impl ErrorCode {
-    // TODO(port): bun_core::Error::as_u16 — bun_core::Error is currently the
-    // wide errno-carrying struct, not the NonZeroU16 anyerror code. Use errno as a
-    // stand-in until the interning table lands.
     pub const PARSER_ERROR: ErrorCodeInt = 0xFFFE;
     pub const JS_ERROR_OBJECT: ErrorCodeInt = 0xFFFD;
 
     #[inline]
     pub fn from(code: bun_core::Error) -> ErrorCode {
-        // Zig: @as(ErrorCode, @enumFromInt(@intFromError(code)))
         ErrorCode(code.as_u16() as ErrorCodeInt)
     }
 
     #[inline]
     pub fn to_error(self) -> bun_core::Error {
-        // Zig: @errorFromInt(@intFromEnum(self))
         bun_core::Error::from_errno(self.0 as i32)
     }
 }
@@ -1408,8 +1436,7 @@ impl ErrorCode {
             .unwrap_or("ERR_UNKNOWN")
     }
 
-    /// `Error.fmt(this, globalThis, fmt, args)` (codegen ErrorCode.zig) —
-    /// formats `args` into a `bun.String`, hands it to
+    /// Formats `args` into a `bun.String`, hands it to
     /// `Bun__createErrorWithCode`, and returns the constructed Error JSValue.
     /// The C++ side picks the ctor / `.name` / `.code` from `errors[self.0]`.
     pub fn fmt<G: GlobalObjectRef + ?Sized>(self, global: &G, args: Arguments<'_>) -> JSValue {
@@ -1417,7 +1444,7 @@ impl ErrorCode {
         // `G` is one of the two `#[repr(C)]` opaque ZST `JSGlobalObject`
         // handles (see `GlobalObjectRef` doc); `opaque_ref` is the safe
         // ZST-handle deref proof (panics on null). C++ clones the impl into a
-        // JSString; Zig wrapper does `defer message.deref()`, mirrored below.
+        // JSString; `message` is deref'd below after the call.
         let global = JSGlobalObject::opaque_ref(global.as_global_ptr().cast::<JSGlobalObject>());
         let v = Bun__createErrorWithCode(global, self, &mut message);
         message.deref();
@@ -1457,7 +1484,7 @@ unsafe extern "C" {
     ) -> JSValue;
 }
 
-/// Runtime equivalent of Zig's comptime `ErrorBuilder(code, fmt, Args)`.
+/// Pending error (code + format args).
 /// Returned from `JSGlobalObject::err(code, args)` so callers can choose
 /// `.throw()` / `.to_js()` / `.reject()` at the use site.
 pub struct ErrorBuilder<'a, G: GlobalObjectRef + ?Sized = JSGlobalObject> {
@@ -1499,18 +1526,14 @@ impl<'a, G: GlobalObjectRef + ?Sized> ErrorBuilder<'a, G> {
     }
 }
 
-// Zig: comptime { @export(&ErrorCode.ParserError, .{ .name = "Zig_ErrorCodeParserError" }); ... }
-//
-// Gated off: in Zig these are `@intFromEnum(ErrorCode.from(error.ParserError))`
-// — i.e. derived from the anyerror integer so that the value C++ compares
-// against (`extern "C" ZigErrorCode Zig_ErrorCodeParserError;`,
-// headers-handwritten.h) is exactly what `from()` produces. The Rust `from()`
-// above currently maps via `code.errno`, which never yields the hard-coded
-// 0xFFFE/0xFFFD placeholders, so exporting them would make C++ parser-error
-// detection silently never match. Until `bun_core::Error` gains the
-// NonZeroU16 anyerror interning (`err!("ParserError").as_u16()`) and these
-// constants can be derived from the same source as `from()`, keep the Zig-side
-// `@export` authoritative and do not let C++ link against bogus Rust statics.
+// C++ compares parser-error sentinels against these exported statics
+// (`extern "C" ZigErrorCode Zig_ErrorCodeParserError;`, headers-handwritten.h).
+// CAUTION: `from()` above currently maps via `code.errno`, which never yields
+// the hard-coded 0xFFFE/0xFFFD placeholder values, so a code produced by
+// `from()` will never compare equal to these constants. Until
+// `bun_core::Error` gains NonZeroU16 anyerror interning
+// (`err!("ParserError").as_u16()`) so these constants can be derived from the
+// same source as `from()`, that mismatch stands.
 
 #[unsafe(no_mangle)]
 pub(crate) static Zig_ErrorCodeParserError: ErrorCodeInt = ErrorCode::PARSER_ERROR;
