@@ -3008,7 +3008,7 @@ mod stdio_stores {
     use super::*;
     use crate::node::types::PathOrFileDescriptor;
     use crate::webcore::blob::store::{Data, File as FileStore};
-    use crate::webcore::blob::{Blob, Store, StoreRef};
+    use crate::webcore::blob::{Blob, BlobExt as _, Store, StoreRef};
 
     thread_local! {
         static STDIN: core::cell::RefCell<Option<StoreRef>> = const { core::cell::RefCell::new(None) };
@@ -3055,6 +3055,8 @@ mod stdio_stores {
             s.as_ref().unwrap().clone()
         });
         let blob = Blob::new(Blob::init_with_store(store, global_this));
+        // SAFETY: `Blob::new` heap-allocates; the JS wrapper takes ownership.
+        unsafe { (*blob).calculate_estimated_byte_size() };
         // Bun.stdin/stdout/stderr are typed as BunFile; route through the
         // File structure so `.name` / `.lastModified` stay reachable.
         crate::webcore::blob::dom_file_to_js_unchecked(global_this, blob)
