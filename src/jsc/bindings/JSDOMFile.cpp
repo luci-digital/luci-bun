@@ -204,12 +204,16 @@ void initJSDOMFileClassStructure(JSC::LazyClassStructure::Initializer& init)
     init.setConstructor(constructor);
 }
 
+extern "C" SYSV_ABI size_t Blob__estimatedSize(void* ptr);
+
 extern "C" SYSV_ABI JSC::EncodedJSValue BUN__createJSDOMFileUnsafely(JSC::JSGlobalObject* lexicalGlobalObject, void* ptr)
 {
     auto* globalObject = defaultGlobalObject(lexicalGlobalObject);
     auto& vm = JSC::getVM(globalObject);
     auto* structure = globalObject->JSDOMFileStructure();
-    return JSValue::encode(WebCore::JSBlob::create(vm, globalObject, structure, ptr));
+    auto* instance = WebCore::JSBlob::create(vm, globalObject, structure, ptr);
+    vm.heap.reportExtraMemoryAllocated(instance, Blob__estimatedSize(ptr));
+    return JSValue::encode(instance);
 }
 
 } // namespace Bun
