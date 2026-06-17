@@ -2555,12 +2555,17 @@ where
                 if bun_opaque::opaque_deref_mut(h3_app)
                     .add_server_name_with_options(z, &ssl_opts)
                     .is_err()
-                    && !global.has_exception()
                 {
-                    return Err(global.throw(format_args!(
-                        "Failed to add serverName \"{}\" for HTTP/3",
-                        bstr::BStr::new(server_name.to_bytes())
-                    )));
+                    if !global.has_exception() && !super::throw_ssl_error_if_necessary(global) {
+                        return Err(global.throw(format_args!(
+                            "Failed to add serverName \"{}\" for HTTP/3",
+                            bstr::BStr::new(server_name.to_bytes())
+                        )));
+                    }
+                    return Err(JsError::Thrown);
+                }
+                if super::throw_ssl_error_if_necessary(global) {
+                    return Err(JsError::Thrown);
                 }
             }
         }

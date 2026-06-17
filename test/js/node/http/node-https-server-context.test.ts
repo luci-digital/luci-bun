@@ -29,6 +29,24 @@ async function peerCN(port: number, servername?: string) {
   return cert.subject?.CN;
 }
 
+async function httpsGetViaSNI(port: number, servername: string) {
+  const socket = tls.connect({ host: "127.0.0.1", port, servername, rejectUnauthorized: false });
+  const errored = once(socket, "error").then(([e]) => Promise.reject(e));
+  try {
+    await Promise.race([once(socket, "secureConnect"), errored]);
+    const cn = socket.getPeerCertificate().subject?.CN;
+    socket.write(`GET / HTTP/1.1\r\nHost: ${servername}\r\nConnection: close\r\n\r\n`);
+    const chunks: Buffer[] = [];
+    socket.on("data", c => chunks.push(c));
+    await Promise.race([once(socket, "end"), once(socket, "close"), errored]);
+    const raw = Buffer.concat(chunks).toString("utf8");
+    const sep = raw.indexOf("\r\n\r\n");
+    return { cn, body: sep >= 0 ? raw.slice(sep + 4) : raw };
+  } finally {
+    socket.destroy();
+  }
+}
+
 async function listen(server: https.Server) {
   const listenErr = once(server, "error");
   server.listen(0);
@@ -92,11 +110,11 @@ describe("https.Server", () => {
       expect(await peerCN(port, "b.example.com")).toBe("agent3");
       expect(await peerCN(port, "unknown.example.com")).toBe("agent2");
 
-      const res = await fetch(`https://127.0.0.1:${port}/`, {
-        tls: { rejectUnauthorized: false, checkServerIdentity: () => undefined },
-        headers: { Host: "a.example.com" },
-      });
-      expect(await res.text()).toBe("ok");
+      // The SNI-selected domain must also have routes installed (not just
+      // a TLS context), so an HTTP request over that SNI reaches the
+      // request handler.
+      expect(await httpsGetViaSNI(port, "a.example.com")).toEqual({ cn: "agent1", body: "ok" });
+      expect(await httpsGetViaSNI(port, "b.example.com")).toEqual({ cn: "agent3", body: "ok" });
     } finally {
       server.close();
     }
