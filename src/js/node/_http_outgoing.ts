@@ -371,8 +371,7 @@ const OutgoingMessagePrototype = {
     const headers = this[headersSymbol];
     // Mirror getHeaders(): every branch returns a null-prototype object so the
     // two accessors agree (kEmptyObject is already null-proto).
-    if (!headers)
-      return this[kEmptySetCookie] ? ObjectAssign(ObjectCreate(null), { "set-cookie": [] }) : kEmptyObject;
+    if (!headers) return this[kEmptySetCookie] ? ObjectAssign(ObjectCreate(null), { "set-cookie": [] }) : kEmptyObject;
     const json = ObjectAssign(ObjectCreate(null), headers.toJSON());
     if (this[kEmptySetCookie] && json["set-cookie"] === undefined) {
       json["set-cookie"] = [];
