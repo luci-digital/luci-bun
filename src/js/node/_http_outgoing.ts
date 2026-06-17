@@ -3,6 +3,8 @@ const { isUint8Array, validateString } = require("internal/validators");
 const { deprecate } = require("internal/util/deprecate");
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectKeys = Object.keys;
+const ObjectAssign = Object.assign;
+const ObjectCreate = Object.create;
 const {
   headerStateSymbol,
   NodeHTTPHeaderState,
@@ -286,7 +288,7 @@ const OutgoingMessagePrototype = {
     // object; copy the FetchHeaders.toJSON() result onto a null-proto target
     // so assert.deepStrictEqual against a `{ __proto__: null, ... }` fixture
     // succeeds (see upstream test-http-set-header-chain.js).
-    const json = Object.assign(Object.create(null), headers.toJSON());
+    const json = ObjectAssign(ObjectCreate(null), headers.toJSON());
     if (this[kEmptySetCookie] && json["set-cookie"] === undefined) {
       json["set-cookie"] = [];
     }
@@ -370,8 +372,8 @@ const OutgoingMessagePrototype = {
     // Mirror getHeaders(): every branch returns a null-prototype object so the
     // two accessors agree (kEmptyObject is already null-proto).
     if (!headers)
-      return this[kEmptySetCookie] ? Object.assign(Object.create(null), { "set-cookie": [] }) : kEmptyObject;
-    const json = Object.assign(Object.create(null), headers.toJSON());
+      return this[kEmptySetCookie] ? ObjectAssign(ObjectCreate(null), { "set-cookie": [] }) : kEmptyObject;
+    const json = ObjectAssign(ObjectCreate(null), headers.toJSON());
     if (this[kEmptySetCookie] && json["set-cookie"] === undefined) {
       json["set-cookie"] = [];
     }
