@@ -104,6 +104,13 @@ const fuzzerInputs: [name: string, blob: string][] = [
     "min()-led atan2 chain ending in a dangling +",
     "H4sIAAAAAAACA8soztEozsyDY13LUUAG4NLm0jW0MDExMzcxMTA3NjewNDU1NDM0HUDxxJLEPCMNoBhtlcPFwEArF5iGLLm0DCx1zE1hlOYgNWdEGUeZOfQyiBgLqOHIUTNGzSDXDFrkm8FlDMJbg6g81yQPAgAgY/8x4QgAAA==",
   ],
+  [
+    // 2,150-byte variant: same chain shape as above at 24 nesting levels,
+    // with one extra leading `+ -18446744073709551615` sum term. Hung in
+    // Parser::next_including_whitespace_and_comments before the fix.
+    "min()-led atan2 chain with extra leading sum term",
+    "H4sIAAAAAAACA8soztEozsyDY13LUUAG4NLm0jW0MDExMzcxMTA3NjewNDU1NDM0paU4KZoTSxLzjDSAYrRVDhcDA61cYIKy5NIysNQxN4VRmkD1w9E4AoZSy3GDxxx6GUSMBdRw5KgZo2aQawZt880gKgw0yYMAuYa6bWYIAAA=",
+  ],
 ];
 
 test.concurrent.each(fuzzerInputs)(
